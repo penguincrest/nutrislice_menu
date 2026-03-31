@@ -1,0 +1,40 @@
+# ─── Lovelace card ───────────────────────────────────────────────────────────
+# Paste into a Manual card on your dashboard.
+# Update sensor entity names to match your school's slug.
+# Example below uses Chenoweth Elementary (JCPS).
+
+type: vertical-stack
+title: "🏫 School Menu"
+cards:
+  - type: markdown
+    title: "🍳 Today's Breakfast"
+    content: >
+      {% set items = state_attr('sensor.chenoweth_breakfast_today', 'items') %}
+      {% if items %}
+        {% for item in items %}
+          - **{{ item.name }}**{% if item.image %}
+          ![]( {{- item.image -}} ){width=80}{% endif %}
+
+        {% endfor %}
+      {% else %}
+        _No breakfast data — run the sync_menu service to populate._
+      {% endif %}
+
+  - type: markdown
+    title: "🥗 Today's Lunch"
+    content: >
+      {% set items = state_attr('sensor.chenoweth_lunch_today', 'items') %}
+      {% if items %}
+        {% for item in items %}
+          - **{{ item.name }}**{% if item.image %}
+          ![]( {{- item.image -}} ){width=80}{% endif %}
+
+        {% endfor %}
+      {% else %}
+        _No lunch data — run the sync_menu service to populate._
+      {% endif %}
+
+  - type: calendar
+    entities:
+      - calendar.school_menu
+    initial_view: dayGridWeek

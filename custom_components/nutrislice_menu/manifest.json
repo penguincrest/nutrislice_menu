@@ -1,0 +1,12 @@
+{
+  "domain": "nutrislice_menu",
+  "name": "Nutrislice School Menu",
+  "version": "1.0.0",
+  "config_flow": true,
+  "single_config_entry": true,
+  "documentation": "https://github.com/penguincrest/nutrislice_menu",
+  "issue_tracker": "https://github.com/penguincrest/nutrislice_menu/issues",
+  "iot_class": "cloud_polling",
+  "requirements": [],
+  "codeowners": ["@penguincrest"]
+}
