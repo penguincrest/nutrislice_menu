@@ -1,11 +1,11 @@
 """Nutrislice School Menu – Home Assistant Custom Integration.
 
 Fetches breakfast and lunch menus from any Nutrislice-powered school and:
-  • Creates two sensor entities (today's breakfast / lunch)
+  • Creates two sensor entities  (today's breakfast / lunch)
+  • Creates one calendar entity  (calendar.nutrislice_<school>) that serves
+    menu events directly to HA — no external calendar integration required
   • Registers a service  nutrislice_menu.sync_menu  that fetches fresh data
-    and writes events to the configured calendar entity
-
-Scheduling is entirely up to the user – call sync_menu from an automation.
+    on demand (call this from your own automation)
 """
 from __future__ import annotations
 
@@ -15,14 +15,10 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall
 
-from .calendar_writer import write_calendar_events
 from .const import (
-    CONF_CALENDAR_ENTITY,
     CONF_DISTRICT,
     CONF_SCHOOL,
-    DATA_CALENDAR_ENTITY,
     DATA_COORDINATOR,
-    DEFAULT_CALENDAR_ENTITY,
     DOMAIN,
     SERVICE_SYNC_MENU,
 )
@@ -30,7 +26,7 @@ from .coordinator import NutrisliceCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS: list[Platform] = [Platform.SENSOR]
+PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.CALENDAR]
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
@@ -39,40 +35,31 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     district: str = entry.data[CONF_DISTRICT]
     school:   str = entry.data[CONF_SCHOOL]
-    calendar_entity_id: str = entry.data.get(
-        CONF_CALENDAR_ENTITY, DEFAULT_CALENDAR_ENTITY
-    )
 
     coordinator = NutrisliceCoordinator(hass, district, school)
 
-    # First refresh – UpdateFailed is automatically converted to ConfigEntryNotReady
+    # First fetch — UpdateFailed is automatically converted to ConfigEntryNotReady
     await coordinator.async_config_entry_first_refresh()
 
     hass.data[DOMAIN][entry.entry_id] = {
-        DATA_COORDINATOR:     coordinator,
-        DATA_CALENDAR_ENTITY: calendar_entity_id,
+        DATA_COORDINATOR: coordinator,
     }
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     # ── Register sync_menu service ────────────────────────────────────────────
     async def handle_sync_menu(call: ServiceCall) -> None:
-        """Fetch fresh Nutrislice data, update sensors, write calendar events."""
-        _LOGGER.info(
-            "sync_menu: fetching %s/%s → %s", district, school, calendar_entity_id
-        )
+        """Refresh Nutrislice data on demand.
+
+        The coordinator notifies all entities (sensors + calendar) of the
+        new data automatically via the CoordinatorEntity listener mechanism.
+        No manual calendar writes needed.
+        """
+        _LOGGER.info("sync_menu: refreshing data for %s/%s", district, school)
         await coordinator.async_refresh()
-
-        if not coordinator.data:
-            _LOGGER.warning("sync_menu: no data returned from Nutrislice")
-            return
-
-        await write_calendar_events(
-            hass, calendar_entity_id, coordinator.data, district, school
-        )
         _LOGGER.info(
-            "sync_menu complete – %d days written to %s",
-            len(coordinator.data), calendar_entity_id,
+            "sync_menu complete – %d days loaded for %s/%s",
+            len(coordinator.data or {}), district, school,
         )
 
     hass.services.async_register(DOMAIN, SERVICE_SYNC_MENU, handle_sync_menu)

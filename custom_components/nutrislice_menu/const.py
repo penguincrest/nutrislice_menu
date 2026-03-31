@@ -9,7 +9,7 @@ NUTRISLICE_API_URL = (
     "/menu-type/{menu_type}/{year}/{month:02d}/{day:02d}/"
 )
 
-# Used to validate the district slug exists before finishing config flow
+# Used to validate the district slug during config flow
 NUTRISLICE_SCHOOLS_URL = (
     "https://{district}.api.nutrislice.com/menu/api/schools/?format=json"
 )
@@ -20,18 +20,15 @@ MENU_TYPES = ("breakfast", "lunch")
 KEEP_CATEGORIES = {"entree", "side", "fruit", "vegetable", "grain", "protein", ""}
 
 # Config entry keys
-CONF_DISTRICT        = "district"
-CONF_SCHOOL          = "school"
-CONF_CALENDAR_ENTITY = "calendar_entity"
+CONF_DISTRICT = "district"
+CONF_SCHOOL   = "school"
 
 # Defaults shown in the config flow form
-DEFAULT_DISTRICT         = "jcps"
-DEFAULT_SCHOOL           = "chenoweth"
-DEFAULT_CALENDAR_ENTITY  = "calendar.school_menu"
+DEFAULT_DISTRICT = "jcps"
+DEFAULT_SCHOOL   = "chenoweth"
 
-# hass.data keys
-DATA_COORDINATOR     = "coordinator"
-DATA_CALENDAR_ENTITY = "calendar_entity"
+# hass.data key
+DATA_COORDINATOR = "coordinator"
 
 # Service
 SERVICE_SYNC_MENU = "sync_menu"

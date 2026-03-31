@@ -4,24 +4,22 @@
     "step": {
       "user": {
         "title": "Enter your Nutrislice district",
-        "description": "Enter your school district's Nutrislice subdomain. This is the part before `.nutrislice.com` in your school's menu URL.\n\nFor example, if your menu is at **jcps**.nutrislice.com, enter **jcps**.",
+        "description": "Enter your school district's Nutrislice subdomain — the part before `.nutrislice.com` in your school menu URL.\n\nFor example, if your menu URL is **jcps**.nutrislice.com, enter **jcps**.",
         "data": {
           "district": "District slug"
         },
         "data_description": {
-          "district": "The subdomain of your district's Nutrislice site (e.g. jcps, frsd, pleasantvalley)."
+          "district": "The Nutrislice subdomain for your district (e.g. jcps, frsd, pleasantvalley)."
         }
       },
       "school": {
         "title": "Select your school",
-        "description": "Choose your school and the Home Assistant calendar where menu events will be created.",
+        "description": "Choose your school from the list below. A calendar entity will be created automatically.",
         "data": {
-          "school": "School",
-          "calendar_entity": "Calendar entity"
+          "school": "School"
         },
         "data_description": {
-          "school": "Your school as listed in Nutrislice.",
-          "calendar_entity": "The HA calendar entity that will receive a menu event for each school day. Create a Local Calendar named 'School Menu' if you don't have one."
+          "school": "Your school as listed in Nutrislice."
         }
       }
     },
@@ -36,7 +34,7 @@
   "services": {
     "sync_menu": {
       "name": "Sync menu",
-      "description": "Fetches the latest breakfast and lunch menus from Nutrislice and writes them as events to the configured calendar."
+      "description": "Fetches the latest breakfast and lunch menus from Nutrislice. The calendar entity and sensors update automatically."
     }
   }
 }
