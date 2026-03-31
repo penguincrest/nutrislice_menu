@@ -1,0 +1,8 @@
+sync_menu:
+  name: Sync menu
+  description: >
+    Fetches the current and upcoming week's breakfast and lunch menus from
+    Nutrislice. The integration's own calendar entity and today's sensors
+    update automatically once the data is refreshed. Call this from a Home
+    Assistant automation on whatever schedule you prefer.
+  fields: {}
