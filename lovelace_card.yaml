@@ -50,9 +50,10 @@ cards:
         {% for item in items %}
           <div style="display:flex;flex-direction:column;align-items:center;width:90px;">
             {% if item.image %}
-              <img src="{{ item.image }}"
-                   style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--divider-color);"
-                   onerror="this.style.display='none'">
+              <input type="checkbox" id="zoom-bk-{{ loop.index }}" class="zoom-toggle">
+              <label for="zoom-bk-{{ loop.index }}" class="zoom-label">
+                <img src="{{ item.image }}" class="zoom-thumb" onerror="this.style.display='none'">
+              </label>
             {% else %}
               <div style="width:72px;height:72px;border-radius:8px;background:var(--secondary-background-color);border:1px solid var(--divider-color);"></div>
             {% endif %}
@@ -64,6 +65,29 @@ cards:
         {% endfor %}
         </div>
       {% endif %}
+    card_mod:
+      style: |
+        .zoom-toggle { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; margin: 0; }
+        .zoom-label { display: block; cursor: zoom-in; }
+        .zoom-thumb {
+          width: 72px; height: 72px; object-fit: cover;
+          border-radius: 8px; border: 1px solid var(--divider-color);
+          display: block;
+          transition: transform 120ms ease;
+        }
+        .zoom-thumb:hover { transform: scale(1.04); }
+        .zoom-toggle:checked ~ .zoom-label {
+          position: fixed; inset: 0; z-index: 9999;
+          background: rgba(0,0,0,0.85);
+          display: flex; align-items: center; justify-content: center;
+          cursor: zoom-out;
+        }
+        .zoom-toggle:checked ~ .zoom-label .zoom-thumb {
+          width: auto; height: auto;
+          max-width: 92vw; max-height: 92vh;
+          border-radius: 12px; border: none;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
 
   # ── Lunch ──────────────────────────────────────────────────────────────────
   - type: markdown
@@ -80,9 +104,10 @@ cards:
         {% for item in items %}
           <div style="display:flex;flex-direction:column;align-items:center;width:90px;">
             {% if item.image %}
-              <img src="{{ item.image }}"
-                   style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--divider-color);"
-                   onerror="this.style.display='none'">
+              <input type="checkbox" id="zoom-ln-{{ loop.index }}" class="zoom-toggle">
+              <label for="zoom-ln-{{ loop.index }}" class="zoom-label">
+                <img src="{{ item.image }}" class="zoom-thumb" onerror="this.style.display='none'">
+              </label>
             {% else %}
               <div style="width:72px;height:72px;border-radius:8px;background:var(--secondary-background-color);border:1px solid var(--divider-color);"></div>
             {% endif %}
@@ -94,6 +119,29 @@ cards:
         {% endfor %}
         </div>
       {% endif %}
+    card_mod:
+      style: |
+        .zoom-toggle { position: absolute; opacity: 0; pointer-events: none; width: 0; height: 0; margin: 0; }
+        .zoom-label { display: block; cursor: zoom-in; }
+        .zoom-thumb {
+          width: 72px; height: 72px; object-fit: cover;
+          border-radius: 8px; border: 1px solid var(--divider-color);
+          display: block;
+          transition: transform 120ms ease;
+        }
+        .zoom-thumb:hover { transform: scale(1.04); }
+        .zoom-toggle:checked ~ .zoom-label {
+          position: fixed; inset: 0; z-index: 9999;
+          background: rgba(0,0,0,0.85);
+          display: flex; align-items: center; justify-content: center;
+          cursor: zoom-out;
+        }
+        .zoom-toggle:checked ~ .zoom-label .zoom-thumb {
+          width: auto; height: auto;
+          max-width: 92vw; max-height: 92vh;
+          border-radius: 12px; border: none;
+          box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
 
   # ── Weekly calendar view ───────────────────────────────────────────────────
   - type: calendar
