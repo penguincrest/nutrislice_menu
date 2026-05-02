@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nutrislice Card — Mockup Preview</title>
+<style>
+  :root {
+    --primary-bg: #111418;
+    --card-bg: #1c2128;
+    --card-bg-2: #161a1f;
+    --card-border: #2a3038;
+    --primary-text: #e6edf3;
+    --secondary-text: #8b949e;
+    --divider: #30363d;
+    --accent: #58a6ff;
+    --accent-soft: #1f6feb33;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 24px;
+    background: var(--primary-bg);
+    color: var(--primary-text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    line-height: 1.4;
+  }
+  h1 { font-size: 24px; margin: 0 0 8px 0; }
+  .intro {
+    color: var(--secondary-text);
+    margin: 0 0 32px 0;
+    max-width: 700px;
+    font-size: 14px;
+  }
+  .mockups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+    gap: 28px;
+    max-width: 1800px;
+  }
+  .mockup-section {
+    background: var(--card-bg-2);
+    border: 1px solid var(--card-border);
+    border-radius: 18px;
+    padding: 20px;
+  }
+  .mockup-label {
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 3px 8px;
+    border-radius: 999px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    display: inline-block;
+    margin-bottom: 8px;
+  }
+  .mockup-title { font-size: 20px; font-weight: 600; margin: 0 0 4px 0; }
+  .mockup-desc {
+    font-size: 13px;
+    color: var(--secondary-text);
+    margin: 0 0 18px 0;
+  }
+
+  /* HA-card baseline */
+  .ha-card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .ha-card h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 14px 0;
+  }
+  .date-header {
+    font-size: 15px;
+    font-weight: 500;
+    margin: 0 4px 12px 4px;
+    color: var(--primary-text);
+  }
+  .date-header b { font-weight: 700; }
+
+  /* "Deli paper" food image placeholder — same red-checkered look as your screenshots */
+  .food-img {
+    background-image:
+      linear-gradient(45deg, #c0392b 25%, transparent 25%),
+      linear-gradient(-45deg, #c0392b 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #c0392b 75%),
+      linear-gradient(-45deg, transparent 75%, #c0392b 75%);
+    background-size: 20px 20px;
+    background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    background-color: #f4ece0;
+    color: #2b1810;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    font-size: 28px;
+  }
+  .food-img.lg { font-size: 64px; }
+  .food-img.xl { font-size: 96px; }
+
+  /* ════════════ OPTION A: Compact image grid ════════════ */
+  .opt-a-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(96px, 1fr));
+    gap: 14px;
+  }
+  .opt-a-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .opt-a-tile .food-img {
+    width: 100%;
+    aspect-ratio: 1;
+    margin-bottom: 6px;
+    border: 1px solid var(--divider);
+  }
+  .opt-a-tile .name {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.25;
+  }
+  .opt-a-tile .cat {
+    font-size: 10px;
+    color: var(--secondary-text);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 3px;
+  }
+
+  /* ════════════ OPTION B: Category grouped (recommended) ════════════ */
+  .opt-b-section { margin-bottom: 16px; }
+  .opt-b-section:last-child { margin-bottom: 0; }
+  .opt-b-cat {
+    font-size: 11px;
+    color: var(--secondary-text);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin: 0 0 10px 0;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--divider);
+    font-weight: 600;
+  }
+  .opt-b-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 12px;
+  }
+  .opt-b-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .opt-b-tile .food-img {
+    width: 100%;
+    aspect-ratio: 1;
+    margin-bottom: 6px;
+    border: 1px solid var(--divider);
+  }
+  .opt-b-tile .name {
+    font-size: 12px;
+    line-height: 1.25;
+    font-weight: 500;
+  }
+
+  /* ════════════ OPTION C: Hero + sides strip ════════════ */
+  .opt-c-hero {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/10;
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .opt-c-hero .food-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--divider);
+  }
+  .opt-c-hero .overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.7) 50%, transparent 100%);
+    padding: 36px 16px 14px 16px;
+  }
+  .opt-c-hero .overlay-cat {
+    font-size: 11px;
+    color: #fff;
+    opacity: 0.85;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+  }
+  .opt-c-hero .overlay-name {
+    font-size: 22px;
+    font-weight: 700;
+    color: #fff;
+    margin-top: 2px;
+  }
+  .opt-c-sides-label {
+    font-size: 11px;
+    color: var(--secondary-text);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
+    font-weight: 600;
+  }
+  .opt-c-sides {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+  .opt-c-side {
+    flex: 0 0 76px;
+    text-align: center;
+  }
+  .opt-c-side .food-img {
+    width: 76px; height: 76px;
+    margin-bottom: 5px;
+    border: 1px solid var(--divider);
+  }
+  .opt-c-side .name {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  /* ════════════ OPTION D: Side-by-side ════════════ */
+  .opt-d-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .opt-d-col h3 { font-size: 14px; margin-bottom: 10px; }
+  .opt-d-tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .opt-d-tile {
+    text-align: center;
+  }
+  .opt-d-tile .food-img {
+    width: 100%;
+    aspect-ratio: 1;
+    margin-bottom: 4px;
+    border: 1px solid var(--divider);
+  }
+  .opt-d-tile .name {
+    font-size: 11px;
+    line-height: 1.2;
+  }
+
+  /* Width simulators — make each mockup column ≈ phone width to feel realistic */
+  @media (min-width: 900px) {
+    .mockups { grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); }
+  }
+</style>
+</head>
+<body>
+  <h1>Nutrislice Card — Mockup Preview</h1>
+  <p class="intro">
+    Four layout options rendered with a Home Assistant–style dark theme. Image placeholders use
+    the red-checkered "deli paper" pattern from your real Nutrislice photos. Sample data matches
+    your screenshot. Resize the window to see how each adapts.
+  </p>
+
+  <div class="mockups">
+
+    <!-- ───────────────────── OPTION A ───────────────────── -->
+    <section class="mockup-section">
+      <span class="mockup-label">Option A</span>
+      <h2 class="mockup-title">Compact image grid</h2>
+      <p class="mockup-desc">3–4 thumbnails per row, name + category chip below each. Closest to the YAML's original intent.</p>
+
+      <p class="date-header"><b>Tomorrow</b> — Monday, May 4</p>
+
+      <div class="ha-card">
+        <h3>🍳 Breakfast</h3>
+        <div class="opt-a-grid">
+          <div class="opt-a-tile"><div class="food-img">🥞</div><div class="name">Buttermilk Pancakes</div><div class="cat">Entrée</div></div>
+          <div class="opt-a-tile"><div class="food-img">🥣</div><div class="name">Trix Cereal Bowl</div><div class="cat">Entrée</div></div>
+          <div class="opt-a-tile"><div class="food-img">🍞</div><div class="name">Cinnamon Toast</div><div class="cat">Entrée</div></div>
+          <div class="opt-a-tile"><div class="food-img">🧃</div><div class="name">Orange Juice</div><div class="cat">Fruit</div></div>
+          <div class="opt-a-tile"><div class="food-img">🍎</div><div class="name">Apple Slices</div><div class="cat">Fruit</div></div>
+        </div>
+      </div>
+
+      <div class="ha-card">
+        <h3>🥗 Lunch</h3>
+        <div class="opt-a-grid">
+          <div class="opt-a-tile"><div class="food-img">🍗</div><div class="name">Chicken Smackers</div><div class="cat">Entrée</div></div>
+          <div class="opt-a-tile"><div class="food-img">🌭</div><div class="name">All Beef Hot Dog</div><div class="cat">Entrée</div></div>
+          <div class="opt-a-tile"><div class="food-img">🍟</div><div class="name">French Fries</div><div class="cat">Side</div></div>
+          <div class="opt-a-tile"><div class="food-img">🥗</div><div class="name">Garden Salad</div><div class="cat">Side</div></div>
+          <div class="opt-a-tile"><div class="food-img">🥛</div><div class="name">Milk</div><div class="cat">Drink</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────────────────── OPTION B ───────────────────── -->
+    <section class="mockup-section">
+      <span class="mockup-label">Option B · recommended</span>
+      <h2 class="mockup-title">Category-grouped chips</h2>
+      <p class="mockup-desc">Items grouped under category subheaders. Reads more like a real menu, less like a database dump.</p>
+
+      <p class="date-header"><b>Tomorrow</b> — Monday, May 4</p>
+
+      <div class="ha-card">
+        <h3>🍳 Breakfast</h3>
+        <div class="opt-b-section">
+          <div class="opt-b-cat">Entrée</div>
+          <div class="opt-b-tiles">
+            <div class="opt-b-tile"><div class="food-img">🥞</div><div class="name">Buttermilk Pancakes</div></div>
+            <div class="opt-b-tile"><div class="food-img">🥣</div><div class="name">Trix Cereal Bowl</div></div>
+            <div class="opt-b-tile"><div class="food-img">🍞</div><div class="name">Cinnamon Toast</div></div>
+          </div>
+        </div>
+        <div class="opt-b-section">
+          <div class="opt-b-cat">Fruit</div>
+          <div class="opt-b-tiles">
+            <div class="opt-b-tile"><div class="food-img">🧃</div><div class="name">Orange Juice</div></div>
+            <div class="opt-b-tile"><div class="food-img">🍎</div><div class="name">Apple Slices</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ha-card">
+        <h3>🥗 Lunch</h3>
+        <div class="opt-b-section">
+          <div class="opt-b-cat">Entrée</div>
+          <div class="opt-b-tiles">
+            <div class="opt-b-tile"><div class="food-img">🍗</div><div class="name">Chicken Smackers</div></div>
+            <div class="opt-b-tile"><div class="food-img">🌭</div><div class="name">All Beef Hot Dog</div></div>
+          </div>
+        </div>
+        <div class="opt-b-section">
+          <div class="opt-b-cat">Side</div>
+          <div class="opt-b-tiles">
+            <div class="opt-b-tile"><div class="food-img">🍟</div><div class="name">French Fries</div></div>
+            <div class="opt-b-tile"><div class="food-img">🥗</div><div class="name">Garden Salad</div></div>
+          </div>
+        </div>
+        <div class="opt-b-section">
+          <div class="opt-b-cat">Drink</div>
+          <div class="opt-b-tiles">
+            <div class="opt-b-tile"><div class="food-img">🥛</div><div class="name">Milk</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────────────────── OPTION C ───────────────────── -->
+    <section class="mockup-section">
+      <span class="mockup-label">Option C</span>
+      <h2 class="mockup-title">Hero entrée + sides strip</h2>
+      <p class="mockup-desc">First entrée gets a big featured image; everything else becomes a horizontally-scrolling chip row.</p>
+
+      <p class="date-header"><b>Tomorrow</b> — Monday, May 4</p>
+
+      <div class="ha-card">
+        <h3>🍳 Breakfast</h3>
+        <div class="opt-c-hero">
+          <div class="food-img xl">🥞</div>
+          <div class="overlay">
+            <div class="overlay-cat">Entrée</div>
+            <div class="overlay-name">Buttermilk Pancakes</div>
+          </div>
+        </div>
+        <div class="opt-c-sides-label">Also on the menu</div>
+        <div class="opt-c-sides">
+          <div class="opt-c-side"><div class="food-img">🥣</div><div class="name">Trix Cereal</div></div>
+          <div class="opt-c-side"><div class="food-img">🍞</div><div class="name">Cinnamon Toast</div></div>
+          <div class="opt-c-side"><div class="food-img">🧃</div><div class="name">Orange Juice</div></div>
+          <div class="opt-c-side"><div class="food-img">🍎</div><div class="name">Apple Slices</div></div>
+        </div>
+      </div>
+
+      <div class="ha-card">
+        <h3>🥗 Lunch</h3>
+        <div class="opt-c-hero">
+          <div class="food-img xl">🍗</div>
+          <div class="overlay">
+            <div class="overlay-cat">Entrée</div>
+            <div class="overlay-name">Chicken Smackers</div>
+          </div>
+        </div>
+        <div class="opt-c-sides-label">Also on the menu</div>
+        <div class="opt-c-sides">
+          <div class="opt-c-side"><div class="food-img">🌭</div><div class="name">Hot Dog</div></div>
+          <div class="opt-c-side"><div class="food-img">🍟</div><div class="name">Fries</div></div>
+          <div class="opt-c-side"><div class="food-img">🥗</div><div class="name">Salad</div></div>
+          <div class="opt-c-side"><div class="food-img">🥛</div><div class="name">Milk</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ───────────────────── OPTION D ───────────────────── -->
+    <section class="mockup-section">
+      <span class="mockup-label">Option D</span>
+      <h2 class="mockup-title">Side-by-side day overview</h2>
+      <p class="mockup-desc">Breakfast and lunch render in a single horizontal stack — better for tablets / wide dashboards.</p>
+
+      <p class="date-header"><b>Tomorrow</b> — Monday, May 4</p>
+
+      <div class="ha-card">
+        <div class="opt-d-row">
+          <div class="opt-d-col">
+            <h3>🍳 Breakfast</h3>
+            <div class="opt-d-tiles">
+              <div class="opt-d-tile"><div class="food-img">🥞</div><div class="name">Pancakes</div></div>
+              <div class="opt-d-tile"><div class="food-img">🥣</div><div class="name">Trix</div></div>
+              <div class="opt-d-tile"><div class="food-img">🍞</div><div class="name">Cinn. Toast</div></div>
+              <div class="opt-d-tile"><div class="food-img">🧃</div><div class="name">OJ</div></div>
+              <div class="opt-d-tile"><div class="food-img">🍎</div><div class="name">Apple</div></div>
+            </div>
+          </div>
+          <div class="opt-d-col">
+            <h3>🥗 Lunch</h3>
+            <div class="opt-d-tiles">
+              <div class="opt-d-tile"><div class="food-img">🍗</div><div class="name">Smackers</div></div>
+              <div class="opt-d-tile"><div class="food-img">🌭</div><div class="name">Hot Dog</div></div>
+              <div class="opt-d-tile"><div class="food-img">🍟</div><div class="name">Fries</div></div>
+              <div class="opt-d-tile"><div class="food-img">🥗</div><div class="name">Salad</div></div>
+              <div class="opt-d-tile"><div class="food-img">🥛</div><div class="name">Milk</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>
