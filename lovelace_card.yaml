@@ -35,9 +35,34 @@ cards:
           padding: 4px 0 0 0;
         }
 
+  # ── No-school banner (shown only when both meals are empty = holiday) ─────
+  - type: markdown
+    content: >
+      <p style="font-size:18px;font-weight:600;color:var(--primary-text-color);margin:8px 0 4px 0;">
+        🚫 No School!
+      </p>
+      <p style="font-size:14px;color:var(--secondary-text-color);margin:0;">
+        No menu posted for this day — looks like a holiday or break.
+      </p>
+    visibility:
+      - condition: template
+        value_template: >
+          {% set bk = state_attr('sensor.chenoweth_menu_breakfast_today', 'items') %}
+          {% set ln = state_attr('sensor.chenoweth_menu_lunch_today', 'items') %}
+          {% set bk_state = states('sensor.chenoweth_menu_breakfast_today') %}
+          {% set ln_state = states('sensor.chenoweth_menu_lunch_today') %}
+          {% set ok = bk_state not in ['unavailable','unknown'] and ln_state not in ['unavailable','unknown'] %}
+          {{ ok and (bk is none or bk|length == 0) and (ln is none or ln|length == 0) }}
+
   # ── Breakfast ──────────────────────────────────────────────────────────────
   - type: markdown
     title: "🍳 Breakfast"
+    visibility:
+      - condition: template
+        value_template: >
+          {% set bk = state_attr('sensor.chenoweth_menu_breakfast_today', 'items') %}
+          {% set ln = state_attr('sensor.chenoweth_menu_lunch_today', 'items') %}
+          {{ not ((bk is none or bk|length == 0) and (ln is none or ln|length == 0)) }}
     content: >
       {% set sensor = 'sensor.chenoweth_menu_breakfast_today' %}
       {% set items = state_attr(sensor, 'items') %}
@@ -92,6 +117,12 @@ cards:
   # ── Lunch ──────────────────────────────────────────────────────────────────
   - type: markdown
     title: "🥗 Lunch"
+    visibility:
+      - condition: template
+        value_template: >
+          {% set bk = state_attr('sensor.chenoweth_menu_breakfast_today', 'items') %}
+          {% set ln = state_attr('sensor.chenoweth_menu_lunch_today', 'items') %}
+          {{ not ((bk is none or bk|length == 0) and (ln is none or ln|length == 0)) }}
     content: >
       {% set sensor = 'sensor.chenoweth_menu_lunch_today' %}
       {% set items = state_attr(sensor, 'items') %}
