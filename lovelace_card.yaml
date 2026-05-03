@@ -79,15 +79,20 @@ cards:
           margin: 4px 0;
         }
         .menu-row {
-          display: grid;
           gap: 14px;
           padding: 4px 0;
         }
         .menu-row.entrees {
-          grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+          display: flex;
+          flex-direction: row;
           margin-bottom: 16px;
         }
+        .menu-row.entrees .menu-tile {
+          flex: 1 1 0;
+          min-width: 0;
+        }
         .menu-row.sides {
+          display: grid;
           grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
         }
         .menu-tile {
