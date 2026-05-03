@@ -66,9 +66,9 @@ cards:
     content: >
       {% set sensor = 'sensor.chenoweth_menu_breakfast_today' %}
       {% set items = state_attr(sensor, 'items') %}
-      {% if states(sensor) in ['unavailable','unknown'] %}
+      {% if states(sensor) == 'unavailable' or items is none %}
         <p class="state-msg">Sensor unavailable – check the integration loaded correctly.</p>
-      {% elif items is none or items | length == 0 %}
+      {% elif items | length == 0 %}
         <p class="state-msg">No breakfast served.</p>
       {% else %}
         {% set entrees = items | selectattr('category','equalto','entree') | list %}
@@ -191,9 +191,9 @@ cards:
     content: >
       {% set sensor = 'sensor.chenoweth_menu_lunch_today' %}
       {% set items = state_attr(sensor, 'items') %}
-      {% if states(sensor) in ['unavailable','unknown'] %}
+      {% if states(sensor) == 'unavailable' or items is none %}
         <p class="state-msg">Sensor unavailable – check the integration loaded correctly.</p>
-      {% elif items is none or items | length == 0 %}
+      {% elif items | length == 0 %}
         <p class="state-msg">No lunch served.</p>
       {% else %}
         {% set entrees = items | selectattr('category','equalto','entree') | list %}
