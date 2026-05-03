@@ -16,9 +16,6 @@ NUTRISLICE_SCHOOLS_URL = (
 
 MENU_TYPES = ("breakfast", "lunch")
 
-# Food categories we surface; empty string catches uncategorised items
-KEEP_CATEGORIES = {"entree", "side", "fruit", "vegetable", "grain", "protein", ""}
-
 # Config entry keys
 CONF_DISTRICT = "district"
 CONF_SCHOOL   = "school"
@@ -26,9 +23,6 @@ CONF_SCHOOL   = "school"
 # Defaults shown in the config flow form
 DEFAULT_DISTRICT = "jcps"
 DEFAULT_SCHOOL   = "chenoweth"
-
-# hass.data key
-DATA_COORDINATOR = "coordinator"
 
 # Service
 SERVICE_SYNC_MENU = "sync_menu"

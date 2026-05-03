@@ -1,60 +1,49 @@
 """Calendar platform for Nutrislice School Menu.
 
-Creates a single CalendarEntity — calendar.nutrislice_<school> — that HA
-queries directly for events.  No external Local Calendar integration is
-needed or touched; this integration is its own calendar provider.
-
-The entity holds the coordinator's menu data in memory and returns
-CalendarEvent objects filtered to the requested date range on demand.
-This is the same pattern used by waste_collection_schedule and the
-built-in Google Calendar integration.
+Creates calendar.nutrislice_<school> and serves CalendarEvent objects to HA
+on demand from the coordinator's in-memory data.
 """
 from __future__ import annotations
 
 import datetime
 import logging
-from typing import Any
 
 from homeassistant.components.calendar import CalendarEntity, CalendarEvent
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 import homeassistant.util.dt as dt_util
 
-from .const import DATA_COORDINATOR, DOMAIN
+from . import NutrisliceConfigEntry
+from .const import DOMAIN
 from .coordinator import NutrisliceCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 0
 
+# School-day window, used as the calendar event's start/end
+EVENT_START_HOUR = 8
+EVENT_END_HOUR = 15
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: NutrisliceConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the Nutrislice calendar entity."""
-    coordinator: NutrisliceCoordinator = hass.data[DOMAIN][entry.entry_id][DATA_COORDINATOR]
-    async_add_entities([NutrisliceCalendar(coordinator, entry.entry_id)], False)
+    async_add_entities([NutrisliceCalendar(entry.runtime_data, entry.entry_id)])
 
 
 class NutrisliceCalendar(CoordinatorEntity[NutrisliceCoordinator], CalendarEntity):
-    """A CalendarEntity that serves Nutrislice menu data directly to HA.
-
-    HA calls async_get_events() whenever the calendar view is opened or an
-    automation queries the calendar.  We build CalendarEvent objects from
-    the coordinator's in-memory data — no external service calls required.
-    """
+    """A CalendarEntity that serves Nutrislice menu data directly to HA."""
 
     _attr_has_entity_name = True
     _attr_name = "School Menu"
 
     def __init__(self, coordinator: NutrisliceCoordinator, entry_id: str) -> None:
         super().__init__(coordinator)
-        self._entry_id = entry_id
         school_display = coordinator.school.replace("-", " ").title()
         self._attr_unique_id = f"{DOMAIN}_{coordinator.district}_{coordinator.school}_calendar"
         self._attr_device_info = DeviceInfo(
@@ -65,24 +54,18 @@ class NutrisliceCalendar(CoordinatorEntity[NutrisliceCoordinator], CalendarEntit
             entry_type=DeviceEntryType.SERVICE,
         )
 
-    # ── CalendarEntity required property ─────────────────────────────────────
+    @property
+    def available(self) -> bool:
+        return self.coordinator.data is not None
 
     @property
     def event(self) -> CalendarEvent | None:
-        """Return the next upcoming event (used to set entity state on/off)."""
-        now = dt_util.now()
-        today = now.date()
-
-        for date_str in sorted(self.coordinator.data or {}):
-            day_date = datetime.date.fromisoformat(date_str)
-            if day_date < today:
-                continue
-            event = self._build_event(date_str)
-            if event is not None:
-                return event
-        return None
-
-    # ── CalendarEntity event range query ─────────────────────────────────────
+        """Next upcoming event (drives the entity's on/off state)."""
+        today = dt_util.now().date()
+        return next(
+            (ev for ev in self._iter_events() if ev.end.date() >= today),
+            None,
+        )
 
     async def async_get_events(
         self,
@@ -90,75 +73,35 @@ class NutrisliceCalendar(CoordinatorEntity[NutrisliceCoordinator], CalendarEntit
         start_date: datetime.datetime,
         end_date: datetime.datetime,
     ) -> list[CalendarEvent]:
-        """Return all menu events that overlap the requested date range.
+        """Return all menu events overlapping the requested range."""
+        return [
+            ev for ev in self._iter_events()
+            if ev.end >= start_date and ev.start <= end_date
+        ]
 
-        Called by HA whenever the calendar UI or an automation asks for
-        events in a window.  We build them fresh from coordinator data.
-        """
-        if not self.coordinator.data:
-            return []
-
-        events: list[CalendarEvent] = []
-        for date_str, meals in self.coordinator.data.items():
-            day_date = datetime.date.fromisoformat(date_str)
-
-            # Event runs 08:00–15:00 local time
-            event_start = dt_util.as_local(
-                datetime.datetime.combine(day_date, datetime.time(8, 0))
-            )
-            event_end = dt_util.as_local(
-                datetime.datetime.combine(day_date, datetime.time(15, 0))
-            )
-
-            # Filter to requested window
-            if event_end < start_date or event_start > end_date:
-                continue
-
-            event = self._build_event(date_str)
-            if event is not None:
-                events.append(event)
-
-        return sorted(events, key=lambda e: e.start)
-
-    # ── Internal helpers ──────────────────────────────────────────────────────
+    def _iter_events(self):
+        """Yield CalendarEvents for every day in coordinator data, sorted."""
+        for date_str in sorted(self.coordinator.data or {}):
+            if (event := self._build_event(date_str)) is not None:
+                yield event
 
     def _build_event(self, date_str: str) -> CalendarEvent | None:
-        """Build a CalendarEvent for one school day, or None if no items."""
         meals = (self.coordinator.data or {}).get(date_str, {})
-        breakfast: list[dict] = meals.get("breakfast", [])
-        lunch:     list[dict] = meals.get("lunch", [])
-
+        breakfast = meals.get("breakfast", [])
+        lunch = meals.get("lunch", [])
         if not breakfast and not lunch:
             return None
 
-        day_date = datetime.date.fromisoformat(date_str)
+        day = datetime.date.fromisoformat(date_str)
         school_display = self.coordinator.school.replace("-", " ").title()
 
-        summary     = f"🏫 {school_display} – {_friendly_date(date_str)}"
-        description = _build_description(breakfast, lunch)
-
         return CalendarEvent(
-            summary=summary,
-            start=dt_util.as_local(
-                datetime.datetime.combine(day_date, datetime.time(8, 0))
-            ),
-            end=dt_util.as_local(
-                datetime.datetime.combine(day_date, datetime.time(15, 0))
-            ),
-            description=description,
-            location=_pick_hero_image(lunch or breakfast),
+            summary=f"🏫 {school_display} – {day.strftime('%A, %b %-d')}",
+            start=dt_util.as_local(datetime.datetime.combine(day, datetime.time(EVENT_START_HOUR, 0))),
+            end=dt_util.as_local(datetime.datetime.combine(day, datetime.time(EVENT_END_HOUR, 0))),
+            description=_build_description(breakfast, lunch),
+            location=next((i["image"] for i in (lunch or breakfast) if i.get("image")), ""),
         )
-
-
-# ── Formatting helpers ────────────────────────────────────────────────────────
-
-def _friendly_date(date_str: str) -> str:
-    d = datetime.date.fromisoformat(date_str)
-    return d.strftime("%A, %b %-d")
-
-
-def _pick_hero_image(items: list[dict]) -> str:
-    return next((i["image"] for i in items if i.get("image")), "")
 
 
 def _build_description(breakfast: list[dict], lunch: list[dict]) -> str:
