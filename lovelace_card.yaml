@@ -14,30 +14,28 @@
 # second card can re-use the CSS block instead of duplicating ~70 lines.
 # HA's dashboard editor will inline the anchors when you paste — that's fine;
 # they only matter for keeping THIS file readable.
+#
+# IMPORTANT — markdown indentation rule:
+#   The markdown card treats any line indented 4+ spaces as a code block.
+#   That's why this file uses `|` (literal) for the content scalar and keeps
+#   HTML indentation inside the template ≤ 2 spaces.
 
 type: vertical-stack
 cards:
 
   # Date header
   - type: markdown
-    content: >
+    content: |
       {% set sensor = 'sensor.chenoweth_school_menu_breakfast_today' %}
-      {% set showing = state_attr(sensor, 'showing') %}
       {% set date_str = state_attr(sensor, 'date') %}
       {% if date_str %}
-        {% set d = strptime(date_str, '%Y-%m-%d') %}
-        {% set today = now().date() %}
-        {% set target = d.date() %}
-        {% if target == today %}
-          {% set label = 'Today' %}
-        {% elif target == today + timedelta(days=1) %}
-          {% set label = 'Tomorrow' %}
-        {% else %}
-          {% set label = d.strftime('%A') %}
-        {% endif %}
-        <p style="font-size:15px;font-weight:500;color:var(--primary-text-color);margin:0;">
-          {{ label }} — {{ d.strftime('%A, %B %-d') }}
-        </p>
+      {% set d = strptime(date_str, '%Y-%m-%d') %}
+      {% set today = now().date() %}
+      {% set target = d.date() %}
+      {% if target == today %}{% set label = 'Today' %}
+      {% elif target == today + timedelta(days=1) %}{% set label = 'Tomorrow' %}
+      {% else %}{% set label = d.strftime('%A') %}{% endif %}
+      <p style="font-size:15px;font-weight:500;color:var(--primary-text-color);margin:0;">{{ label }} — {{ d.strftime('%A, %B %-d') }}</p>
       {% endif %}
     card_mod:
       style: |
@@ -48,58 +46,51 @@ cards:
           padding: 4px 0 0 0;
         }
 
-  # Breakfast — always rendered.  The template handles every state inline so
-  # we don't need a card-level visibility rule (which can silently fail when
-  # condition:template hits a quirk).  Defines anchors reused by Lunch.
+  # Breakfast — always rendered.  Empty / unavailable states handled inline so
+  # we don't need a card-level visibility rule.
   - type: markdown
     title: "🍳 Breakfast"
-    content: >
+    content: |
       {% set sensor = 'sensor.chenoweth_school_menu_breakfast_today' %}
       {% set items = state_attr(sensor, 'items') %}
       {% if items is none %}
-        <p class="state-msg">⏳ No menu data yet — call <code>nutrislice_menu.sync_menu</code>.</p>
+      <p class="state-msg">⏳ No menu data yet — call <code>nutrislice_menu.sync_menu</code>.</p>
       {% elif items | length == 0 %}
-        <p class="state-msg">No breakfast served.</p>
+      <p class="state-msg">No breakfast served.</p>
       {% else %}
-        {% set entrees = items | selectattr('category','equalto','entree') | list %}
-        {% set sides   = items | rejectattr('category','equalto','entree') | list %}
-        {% if entrees | length > 0 %}
-        <div class="menu-row entrees">
-        {% for item in entrees %}
-          <div class="menu-tile entree">
-            {% if item['image'] %}
-              <input type="checkbox" id="zoom-bk-e{{ loop.index }}" class="zoom-toggle">
-              <label for="zoom-bk-e{{ loop.index }}" class="zoom-label">
-                <img src="{{ item['image'] }}" class="zoom-thumb">
-              </label>
-            {% else %}
-              <div class="placeholder"></div>
-            {% endif %}
-            <span class="tile-name">{{ item['name'] }}</span>
-          </div>
-        {% endfor %}
-        </div>
-        {% endif %}
-        {% if sides | length > 0 %}
-        <div class="menu-row sides">
-        {% for item in sides %}
-          <div class="menu-tile side">
-            {% if item['image'] %}
-              <input type="checkbox" id="zoom-bk-s{{ loop.index }}" class="zoom-toggle">
-              <label for="zoom-bk-s{{ loop.index }}" class="zoom-label">
-                <img src="{{ item['image'] }}" class="zoom-thumb">
-              </label>
-            {% else %}
-              <div class="placeholder"></div>
-            {% endif %}
-            <span class="tile-name">{{ item['name'] }}</span>
-            {% if item['category'] %}
-              <span class="tile-cat">{{ item['category'] }}</span>
-            {% endif %}
-          </div>
-        {% endfor %}
-        </div>
-        {% endif %}
+      {% set entrees = items | selectattr('category','equalto','entree') | list %}
+      {% set sides = items | rejectattr('category','equalto','entree') | list %}
+      {% if entrees | length > 0 %}
+      <div class="menu-row entrees">
+      {% for item in entrees %}
+      <div class="menu-tile entree">
+      {% if item['image'] %}
+      <input type="checkbox" id="zoom-bk-e{{ loop.index }}" class="zoom-toggle">
+      <label for="zoom-bk-e{{ loop.index }}" class="zoom-label"><img src="{{ item['image'] }}" class="zoom-thumb"></label>
+      {% else %}
+      <div class="placeholder"></div>
+      {% endif %}
+      <span class="tile-name">{{ item['name'] }}</span>
+      </div>
+      {% endfor %}
+      </div>
+      {% endif %}
+      {% if sides | length > 0 %}
+      <div class="menu-row sides">
+      {% for item in sides %}
+      <div class="menu-tile side">
+      {% if item['image'] %}
+      <input type="checkbox" id="zoom-bk-s{{ loop.index }}" class="zoom-toggle">
+      <label for="zoom-bk-s{{ loop.index }}" class="zoom-label"><img src="{{ item['image'] }}" class="zoom-thumb"></label>
+      {% else %}
+      <div class="placeholder"></div>
+      {% endif %}
+      <span class="tile-name">{{ item['name'] }}</span>
+      {% if item['category'] %}<span class="tile-cat">{{ item['category'] }}</span>{% endif %}
+      </div>
+      {% endfor %}
+      </div>
+      {% endif %}
       {% endif %}
     card_mod: &meal_card_mod
       style: |
@@ -172,53 +163,47 @@ cards:
   # Lunch — re-uses CSS anchor from Breakfast.
   - type: markdown
     title: "🥗 Lunch"
-    content: >
+    content: |
       {% set sensor = 'sensor.chenoweth_school_menu_lunch_today' %}
       {% set items = state_attr(sensor, 'items') %}
       {% if items is none %}
-        <p class="state-msg">⏳ No menu data yet — call <code>nutrislice_menu.sync_menu</code>.</p>
+      <p class="state-msg">⏳ No menu data yet — call <code>nutrislice_menu.sync_menu</code>.</p>
       {% elif items | length == 0 %}
-        <p class="state-msg">No lunch served.</p>
+      <p class="state-msg">No lunch served.</p>
       {% else %}
-        {% set entrees = items | selectattr('category','equalto','entree') | list %}
-        {% set sides   = items | rejectattr('category','equalto','entree') | list %}
-        {% if entrees | length > 0 %}
-        <div class="menu-row entrees">
-        {% for item in entrees %}
-          <div class="menu-tile entree">
-            {% if item['image'] %}
-              <input type="checkbox" id="zoom-ln-e{{ loop.index }}" class="zoom-toggle">
-              <label for="zoom-ln-e{{ loop.index }}" class="zoom-label">
-                <img src="{{ item['image'] }}" class="zoom-thumb">
-              </label>
-            {% else %}
-              <div class="placeholder"></div>
-            {% endif %}
-            <span class="tile-name">{{ item['name'] }}</span>
-          </div>
-        {% endfor %}
-        </div>
-        {% endif %}
-        {% if sides | length > 0 %}
-        <div class="menu-row sides">
-        {% for item in sides %}
-          <div class="menu-tile side">
-            {% if item['image'] %}
-              <input type="checkbox" id="zoom-ln-s{{ loop.index }}" class="zoom-toggle">
-              <label for="zoom-ln-s{{ loop.index }}" class="zoom-label">
-                <img src="{{ item['image'] }}" class="zoom-thumb">
-              </label>
-            {% else %}
-              <div class="placeholder"></div>
-            {% endif %}
-            <span class="tile-name">{{ item['name'] }}</span>
-            {% if item['category'] %}
-              <span class="tile-cat">{{ item['category'] }}</span>
-            {% endif %}
-          </div>
-        {% endfor %}
-        </div>
-        {% endif %}
+      {% set entrees = items | selectattr('category','equalto','entree') | list %}
+      {% set sides = items | rejectattr('category','equalto','entree') | list %}
+      {% if entrees | length > 0 %}
+      <div class="menu-row entrees">
+      {% for item in entrees %}
+      <div class="menu-tile entree">
+      {% if item['image'] %}
+      <input type="checkbox" id="zoom-ln-e{{ loop.index }}" class="zoom-toggle">
+      <label for="zoom-ln-e{{ loop.index }}" class="zoom-label"><img src="{{ item['image'] }}" class="zoom-thumb"></label>
+      {% else %}
+      <div class="placeholder"></div>
+      {% endif %}
+      <span class="tile-name">{{ item['name'] }}</span>
+      </div>
+      {% endfor %}
+      </div>
+      {% endif %}
+      {% if sides | length > 0 %}
+      <div class="menu-row sides">
+      {% for item in sides %}
+      <div class="menu-tile side">
+      {% if item['image'] %}
+      <input type="checkbox" id="zoom-ln-s{{ loop.index }}" class="zoom-toggle">
+      <label for="zoom-ln-s{{ loop.index }}" class="zoom-label"><img src="{{ item['image'] }}" class="zoom-thumb"></label>
+      {% else %}
+      <div class="placeholder"></div>
+      {% endif %}
+      <span class="tile-name">{{ item['name'] }}</span>
+      {% if item['category'] %}<span class="tile-cat">{{ item['category'] }}</span>{% endif %}
+      </div>
+      {% endfor %}
+      </div>
+      {% endif %}
       {% endif %}
     card_mod: *meal_card_mod
 
