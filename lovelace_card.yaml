@@ -40,22 +40,33 @@ cards:
           padding: 4px 0 0 0;
         }
 
-  # No-school banner (shown only when both meals are empty = holiday)
+  # Fallback banner — covers BOTH the "no menu posted (holiday)" case and the
+  # "sensor unavailable / first sync hasn't run yet" case.  Without this the
+  # card goes silently blank when items are missing.
   - type: markdown
     content: >
+      {% set bk = state_attr('sensor.chenoweth_menu_breakfast_today', 'items') %}
+      {% set ln = state_attr('sensor.chenoweth_menu_lunch_today', 'items') %}
+      {% set unavail = (bk is none) or (ln is none) %}
       <p style="font-size:18px;font-weight:600;color:var(--primary-text-color);margin:8px 0 4px 0;">
-        🚫 No School!
+        {% if unavail %}⏳ No menu data yet{% else %}🚫 No School!{% endif %}
       </p>
       <p style="font-size:14px;color:var(--secondary-text-color);margin:0;">
-        No menu posted for this day — looks like a holiday or break.
+        {% if unavail %}
+          The sensor hasn't returned a menu yet. Try calling
+          <code>nutrislice_menu.sync_menu</code> from Developer Tools → Services,
+          then refresh the dashboard.
+        {% else %}
+          No menu posted for this day — looks like a holiday or break.
+        {% endif %}
       </p>
     visibility:
       - condition: template
         value_template: >
           {% set bk = state_attr('sensor.chenoweth_menu_breakfast_today', 'items') %}
           {% set ln = state_attr('sensor.chenoweth_menu_lunch_today', 'items') %}
-          {{ (bk is not none) and (ln is not none)
-             and (bk|length == 0) and (ln|length == 0) }}
+          {{ ((bk is none) or (bk|length == 0))
+             and ((ln is none) or (ln|length == 0)) }}
 
   # Breakfast — defines anchors that the lunch card reuses below.
   - type: markdown
