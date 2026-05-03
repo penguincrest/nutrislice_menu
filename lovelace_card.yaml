@@ -11,9 +11,9 @@
 #   Settings → Devices & Services → Nutrislice School Menu → your device
 #
 # This file uses YAML anchors (&name / *name) on the FIRST meal card so the
-# second card can re-use the visibility rule and the CSS block instead of
-# duplicating ~70 lines.  HA's dashboard editor will inline the anchors when
-# you paste — that's fine; they only matter for keeping THIS file readable.
+# second card can re-use the CSS block instead of duplicating ~70 lines.
+# HA's dashboard editor will inline the anchors when you paste — that's fine;
+# they only matter for keeping THIS file readable.
 
 type: vertical-stack
 cards:
@@ -26,7 +26,15 @@ cards:
       {% set date_str = state_attr(sensor, 'date') %}
       {% if date_str %}
         {% set d = strptime(date_str, '%Y-%m-%d') %}
-        {% set label = 'Tomorrow' if showing == 'tomorrow' else 'Today' %}
+        {% set today = now().date() %}
+        {% set target = d.date() %}
+        {% if target == today %}
+          {% set label = 'Today' %}
+        {% elif target == today + timedelta(days=1) %}
+          {% set label = 'Tomorrow' %}
+        {% else %}
+          {% set label = d.strftime('%A') %}
+        {% endif %}
         <p style="font-size:15px;font-weight:500;color:var(--primary-text-color);margin:0;">
           {{ label }} — {{ d.strftime('%A, %B %-d') }}
         </p>
@@ -40,86 +48,58 @@ cards:
           padding: 4px 0 0 0;
         }
 
-  # Fallback banner — covers BOTH the "no menu posted (holiday)" case and the
-  # "sensor unavailable / first sync hasn't run yet" case.  Without this the
-  # card goes silently blank when items are missing.
-  - type: markdown
-    content: >
-      {% set bk = state_attr('sensor.chenoweth_school_menu_breakfast_today', 'items') %}
-      {% set ln = state_attr('sensor.chenoweth_school_menu_lunch_today', 'items') %}
-      {% set unavail = (bk is none) or (ln is none) %}
-      <p style="font-size:18px;font-weight:600;color:var(--primary-text-color);margin:8px 0 4px 0;">
-        {% if unavail %}⏳ No menu data yet{% else %}🚫 No School!{% endif %}
-      </p>
-      <p style="font-size:14px;color:var(--secondary-text-color);margin:0;">
-        {% if unavail %}
-          The sensor hasn't returned a menu yet. Try calling
-          <code>nutrislice_menu.sync_menu</code> from Developer Tools → Services,
-          then refresh the dashboard.
-        {% else %}
-          No menu posted for this day — looks like a holiday or break.
-        {% endif %}
-      </p>
-    visibility:
-      - condition: template
-        value_template: >
-          {% set bk = state_attr('sensor.chenoweth_school_menu_breakfast_today', 'items') %}
-          {% set ln = state_attr('sensor.chenoweth_school_menu_lunch_today', 'items') %}
-          {{ ((bk is none) or (bk|length == 0))
-             and ((ln is none) or (ln|length == 0)) }}
-
-  # Breakfast — defines anchors that the lunch card reuses below.
+  # Breakfast — always rendered.  The template handles every state inline so
+  # we don't need a card-level visibility rule (which can silently fail when
+  # condition:template hits a quirk).  Defines anchors reused by Lunch.
   - type: markdown
     title: "🍳 Breakfast"
-    visibility: &meal_visibility
-      - condition: template
-        value_template: >
-          {% set bk = state_attr('sensor.chenoweth_school_menu_breakfast_today', 'items') %}
-          {% set ln = state_attr('sensor.chenoweth_school_menu_lunch_today', 'items') %}
-          {{ (bk and bk|length > 0) or (ln and ln|length > 0) }}
     content: >
-      {% set items = state_attr('sensor.chenoweth_school_menu_breakfast_today', 'items') or [] %}
-      {% set entrees = items | selectattr('category','equalto','entree') | list %}
-      {% set sides   = items | rejectattr('category','equalto','entree') | list %}
-      {% if items | length == 0 %}
+      {% set sensor = 'sensor.chenoweth_school_menu_breakfast_today' %}
+      {% set items = state_attr(sensor, 'items') %}
+      {% if items is none %}
+        <p class="state-msg">⏳ No menu data yet — call <code>nutrislice_menu.sync_menu</code>.</p>
+      {% elif items | length == 0 %}
         <p class="state-msg">No breakfast served.</p>
-      {% endif %}
-      {% if entrees | length > 0 %}
-      <div class="menu-row entrees">
-      {% for item in entrees %}
-        <div class="menu-tile entree">
-          {% if item['image'] %}
-            <input type="checkbox" id="zoom-bk-e{{ loop.index }}" class="zoom-toggle">
-            <label for="zoom-bk-e{{ loop.index }}" class="zoom-label">
-              <img src="{{ item['image'] }}" class="zoom-thumb">
-            </label>
-          {% else %}
-            <div class="placeholder"></div>
-          {% endif %}
-          <span class="tile-name">{{ item['name'] }}</span>
+      {% else %}
+        {% set entrees = items | selectattr('category','equalto','entree') | list %}
+        {% set sides   = items | rejectattr('category','equalto','entree') | list %}
+        {% if entrees | length > 0 %}
+        <div class="menu-row entrees">
+        {% for item in entrees %}
+          <div class="menu-tile entree">
+            {% if item['image'] %}
+              <input type="checkbox" id="zoom-bk-e{{ loop.index }}" class="zoom-toggle">
+              <label for="zoom-bk-e{{ loop.index }}" class="zoom-label">
+                <img src="{{ item['image'] }}" class="zoom-thumb">
+              </label>
+            {% else %}
+              <div class="placeholder"></div>
+            {% endif %}
+            <span class="tile-name">{{ item['name'] }}</span>
+          </div>
+        {% endfor %}
         </div>
-      {% endfor %}
-      </div>
-      {% endif %}
-      {% if sides | length > 0 %}
-      <div class="menu-row sides">
-      {% for item in sides %}
-        <div class="menu-tile side">
-          {% if item['image'] %}
-            <input type="checkbox" id="zoom-bk-s{{ loop.index }}" class="zoom-toggle">
-            <label for="zoom-bk-s{{ loop.index }}" class="zoom-label">
-              <img src="{{ item['image'] }}" class="zoom-thumb">
-            </label>
-          {% else %}
-            <div class="placeholder"></div>
-          {% endif %}
-          <span class="tile-name">{{ item['name'] }}</span>
-          {% if item['category'] %}
-            <span class="tile-cat">{{ item['category'] }}</span>
-          {% endif %}
+        {% endif %}
+        {% if sides | length > 0 %}
+        <div class="menu-row sides">
+        {% for item in sides %}
+          <div class="menu-tile side">
+            {% if item['image'] %}
+              <input type="checkbox" id="zoom-bk-s{{ loop.index }}" class="zoom-toggle">
+              <label for="zoom-bk-s{{ loop.index }}" class="zoom-label">
+                <img src="{{ item['image'] }}" class="zoom-thumb">
+              </label>
+            {% else %}
+              <div class="placeholder"></div>
+            {% endif %}
+            <span class="tile-name">{{ item['name'] }}</span>
+            {% if item['category'] %}
+              <span class="tile-cat">{{ item['category'] }}</span>
+            {% endif %}
+          </div>
+        {% endfor %}
         </div>
-      {% endfor %}
-      </div>
+        {% endif %}
       {% endif %}
     card_mod: &meal_card_mod
       style: |
@@ -189,53 +169,56 @@ cards:
           box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
 
-  # Lunch — re-uses the visibility rule and CSS from the Breakfast card.
+  # Lunch — re-uses CSS anchor from Breakfast.
   - type: markdown
     title: "🥗 Lunch"
-    visibility: *meal_visibility
     content: >
-      {% set items = state_attr('sensor.chenoweth_school_menu_lunch_today', 'items') or [] %}
-      {% set entrees = items | selectattr('category','equalto','entree') | list %}
-      {% set sides   = items | rejectattr('category','equalto','entree') | list %}
-      {% if items | length == 0 %}
+      {% set sensor = 'sensor.chenoweth_school_menu_lunch_today' %}
+      {% set items = state_attr(sensor, 'items') %}
+      {% if items is none %}
+        <p class="state-msg">⏳ No menu data yet — call <code>nutrislice_menu.sync_menu</code>.</p>
+      {% elif items | length == 0 %}
         <p class="state-msg">No lunch served.</p>
-      {% endif %}
-      {% if entrees | length > 0 %}
-      <div class="menu-row entrees">
-      {% for item in entrees %}
-        <div class="menu-tile entree">
-          {% if item['image'] %}
-            <input type="checkbox" id="zoom-ln-e{{ loop.index }}" class="zoom-toggle">
-            <label for="zoom-ln-e{{ loop.index }}" class="zoom-label">
-              <img src="{{ item['image'] }}" class="zoom-thumb">
-            </label>
-          {% else %}
-            <div class="placeholder"></div>
-          {% endif %}
-          <span class="tile-name">{{ item['name'] }}</span>
+      {% else %}
+        {% set entrees = items | selectattr('category','equalto','entree') | list %}
+        {% set sides   = items | rejectattr('category','equalto','entree') | list %}
+        {% if entrees | length > 0 %}
+        <div class="menu-row entrees">
+        {% for item in entrees %}
+          <div class="menu-tile entree">
+            {% if item['image'] %}
+              <input type="checkbox" id="zoom-ln-e{{ loop.index }}" class="zoom-toggle">
+              <label for="zoom-ln-e{{ loop.index }}" class="zoom-label">
+                <img src="{{ item['image'] }}" class="zoom-thumb">
+              </label>
+            {% else %}
+              <div class="placeholder"></div>
+            {% endif %}
+            <span class="tile-name">{{ item['name'] }}</span>
+          </div>
+        {% endfor %}
         </div>
-      {% endfor %}
-      </div>
-      {% endif %}
-      {% if sides | length > 0 %}
-      <div class="menu-row sides">
-      {% for item in sides %}
-        <div class="menu-tile side">
-          {% if item['image'] %}
-            <input type="checkbox" id="zoom-ln-s{{ loop.index }}" class="zoom-toggle">
-            <label for="zoom-ln-s{{ loop.index }}" class="zoom-label">
-              <img src="{{ item['image'] }}" class="zoom-thumb">
-            </label>
-          {% else %}
-            <div class="placeholder"></div>
-          {% endif %}
-          <span class="tile-name">{{ item['name'] }}</span>
-          {% if item['category'] %}
-            <span class="tile-cat">{{ item['category'] }}</span>
-          {% endif %}
+        {% endif %}
+        {% if sides | length > 0 %}
+        <div class="menu-row sides">
+        {% for item in sides %}
+          <div class="menu-tile side">
+            {% if item['image'] %}
+              <input type="checkbox" id="zoom-ln-s{{ loop.index }}" class="zoom-toggle">
+              <label for="zoom-ln-s{{ loop.index }}" class="zoom-label">
+                <img src="{{ item['image'] }}" class="zoom-thumb">
+              </label>
+            {% else %}
+              <div class="placeholder"></div>
+            {% endif %}
+            <span class="tile-name">{{ item['name'] }}</span>
+            {% if item['category'] %}
+              <span class="tile-cat">{{ item['category'] }}</span>
+            {% endif %}
+          </div>
+        {% endfor %}
         </div>
-      {% endfor %}
-      </div>
+        {% endif %}
       {% endif %}
     card_mod: *meal_card_mod
 
