@@ -17,6 +17,15 @@
 #      controls so the rendered output is one continuous string.
 #   3) The HTML sanitizer strips <label> and <span> → use <div>+<img> only,
 #      and <a> for click-to-open-image-in-new-tab.
+#   4) Chat / clipboard auto-linkers convert `x.date` and `x.name` into
+#      markdown links because `.date` and `.name` are valid TLDs.  Use
+#      bracket notation (item['name']) and avoid `.date()` calls so the
+#      template survives copy-paste through any tool.
+#
+# >>> ALWAYS COPY THIS FILE FROM THE RAW GITHUB URL <<<
+#   https://raw.githubusercontent.com/penguincrest/nutrislice_menu/main/lovelace_card.yaml
+#   The "rendered" GitHub view and most chat clients silently insert
+#   markdown links into the Jinja, breaking the template.
 
 type: vertical-stack
 cards:
@@ -28,10 +37,10 @@ cards:
       {%- set date_str = state_attr(sensor, 'date') -%}
       {%- if date_str -%}
         {%- set d = strptime(date_str, '%Y-%m-%d') -%}
-        {%- set today = now().date() -%}
-        {%- set target = d.date() -%}
-        {%- if target == today -%}{%- set label = 'Today' -%}
-        {%- elif target == today + timedelta(days=1) -%}{%- set label = 'Tomorrow' -%}
+        {%- set today_str = now().strftime('%Y-%m-%d') -%}
+        {%- set tomorrow_str = (now() + timedelta(days=1)).strftime('%Y-%m-%d') -%}
+        {%- if date_str == today_str -%}{%- set label = 'Today' -%}
+        {%- elif date_str == tomorrow_str -%}{%- set label = 'Tomorrow' -%}
         {%- else -%}{%- set label = d.strftime('%A') -%}
         {%- endif -%}
         <p class="date-header">{{ label }} — {{ d.strftime('%A, %B %-d') }}</p>
@@ -65,10 +74,10 @@ cards:
       {%- set entrees = items | selectattr('category','equalto','entree') | list -%}
       {%- set sides = items | rejectattr('category','equalto','entree') | list -%}
       {%- if entrees | length > 0 -%}
-      <div class="menu-row entrees">{%- for item in entrees -%}<div class="menu-tile entree">{%- if item.image -%}<a href="{{ item.image }}" target="_blank" rel="noopener"><img src="{{ item.image }}" class="thumb"></a>{%- else -%}<div class="placeholder"></div>{%- endif -%}<div class="tile-name">{{ item.name }}</div></div>{%- endfor -%}</div>
+      <div class="menu-row entrees">{%- for item in entrees -%}<div class="menu-tile entree">{%- if item['image'] -%}<a href="{{ item['image'] }}" target="_blank" rel="noopener"><img src="{{ item['image'] }}" class="thumb"></a>{%- else -%}<div class="placeholder"></div>{%- endif -%}<div class="tile-name">{{ item['name'] }}</div></div>{%- endfor -%}</div>
       {%- endif -%}
       {%- if sides | length > 0 -%}
-      <div class="menu-row sides">{%- for item in sides -%}<div class="menu-tile side">{%- if item.image -%}<a href="{{ item.image }}" target="_blank" rel="noopener"><img src="{{ item.image }}" class="thumb"></a>{%- else -%}<div class="placeholder"></div>{%- endif -%}<div class="tile-name">{{ item.name }}</div>{%- if item.category -%}<div class="tile-cat">{{ item.category }}</div>{%- endif -%}</div>{%- endfor -%}</div>
+      <div class="menu-row sides">{%- for item in sides -%}<div class="menu-tile side">{%- if item['image'] -%}<a href="{{ item['image'] }}" target="_blank" rel="noopener"><img src="{{ item['image'] }}" class="thumb"></a>{%- else -%}<div class="placeholder"></div>{%- endif -%}<div class="tile-name">{{ item['name'] }}</div>{%- if item['category'] -%}<div class="tile-cat">{{ item['category'] }}</div>{%- endif -%}</div>{%- endfor -%}</div>
       {%- endif -%}
       {%- endif -%}
     card_mod: &meal_card_mod
@@ -152,10 +161,10 @@ cards:
       {%- set entrees = items | selectattr('category','equalto','entree') | list -%}
       {%- set sides = items | rejectattr('category','equalto','entree') | list -%}
       {%- if entrees | length > 0 -%}
-      <div class="menu-row entrees">{%- for item in entrees -%}<div class="menu-tile entree">{%- if item.image -%}<a href="{{ item.image }}" target="_blank" rel="noopener"><img src="{{ item.image }}" class="thumb"></a>{%- else -%}<div class="placeholder"></div>{%- endif -%}<div class="tile-name">{{ item.name }}</div></div>{%- endfor -%}</div>
+      <div class="menu-row entrees">{%- for item in entrees -%}<div class="menu-tile entree">{%- if item['image'] -%}<a href="{{ item['image'] }}" target="_blank" rel="noopener"><img src="{{ item['image'] }}" class="thumb"></a>{%- else -%}<div class="placeholder"></div>{%- endif -%}<div class="tile-name">{{ item['name'] }}</div></div>{%- endfor -%}</div>
       {%- endif -%}
       {%- if sides | length > 0 -%}
-      <div class="menu-row sides">{%- for item in sides -%}<div class="menu-tile side">{%- if item.image -%}<a href="{{ item.image }}" target="_blank" rel="noopener"><img src="{{ item.image }}" class="thumb"></a>{%- else -%}<div class="placeholder"></div>{%- endif -%}<div class="tile-name">{{ item.name }}</div>{%- if item.category -%}<div class="tile-cat">{{ item.category }}</div>{%- endif -%}</div>{%- endfor -%}</div>
+      <div class="menu-row sides">{%- for item in sides -%}<div class="menu-tile side">{%- if item['image'] -%}<a href="{{ item['image'] }}" target="_blank" rel="noopener"><img src="{{ item['image'] }}" class="thumb"></a>{%- else -%}<div class="placeholder"></div>{%- endif -%}<div class="tile-name">{{ item['name'] }}</div>{%- if item['category'] -%}<div class="tile-cat">{{ item['category'] }}</div>{%- endif -%}</div>{%- endfor -%}</div>
       {%- endif -%}
       {%- endif -%}
     card_mod: *meal_card_mod
