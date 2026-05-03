@@ -55,17 +55,16 @@ cards:
     ignore_line_breaks: true
     content: |
       {% set items = state_attr('sensor.chenoweth_school_menu_breakfast_today', 'items') %}
-      {% set tile_style    = "display:flex;flex-direction:column;align-items:center;text-align:center;" %}
-      {% set entree_style  = tile_style + "flex:1 1 0;min-width:0;" %}
-      {% set link_style    = "width:100%;display:block;line-height:0;" %}
-      {% set thumb_style   = "width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--divider-color);display:block;" %}
+      {% set tile_style    = "display:flex;flex-direction:column;align-items:center;text-align:center;flex:1 1 0;min-width:0;" %}
+      {% set entree_style  = tile_style %}
+      {% set thumb_style   = "width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--divider-color);display:block;cursor:zoom-in;" %}
       {% set ph_style      = "width:100%;aspect-ratio:1;border-radius:10px;background:var(--secondary-background-color);border:1px solid var(--divider-color);" %}
       {% set name_e_style  = "font-size:14px;font-weight:600;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" %}
       {% set name_s_style  = "font-size:12px;font-weight:500;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" %}
       {% set cat_style     = "font-size:10px;color:var(--secondary-text-color);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;" %}
       {% set msg_style     = "color:var(--secondary-text-color);font-size:14px;margin:4px 0;" %}
       {% set row_e_style   = "display:flex;flex-direction:row;gap:14px;padding:4px 0;margin-bottom:16px;" %}
-      {% set row_s_style   = "display:grid;grid-template-columns:repeat(auto-fit,minmax(82px,1fr));gap:14px;padding:4px 0;" %}
+      {% set row_s_style   = "display:flex;flex-direction:row;gap:14px;padding:4px 0;" %}
 
       {% if items is none %}
         <p style="{{ msg_style }}">⏳ No menu data yet — call <code>nutrislice_menu.sync_menu</code>.</p>
@@ -79,9 +78,7 @@ cards:
             {% for item in entrees %}
               <div style="{{ entree_style }}">
                 {% if item['image'] %}
-                  <a href="{{ item['image'] }}" target="_blank" rel="noopener" style="{{ link_style }}">
-                    <img src="{{ item['image'] }}" style="{{ thumb_style }}">
-                  </a>
+                  <img src="{{ item['image'] }}" style="{{ thumb_style }}" onclick="const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out';o.onclick=function(){o.remove()};const i=document.createElement('img');i.src='{{ item['image'] }}';i.style.cssText='max-width:90vw;max-height:90vh;border-radius:8px';o.appendChild(i);document.body.appendChild(o)">
                 {% else %}
                   <div style="{{ ph_style }}"></div>
                 {% endif %}
@@ -95,9 +92,7 @@ cards:
             {% for item in sides %}
               <div style="{{ tile_style }}">
                 {% if item['image'] %}
-                  <a href="{{ item['image'] }}" target="_blank" rel="noopener" style="{{ link_style }}">
-                    <img src="{{ item['image'] }}" style="{{ thumb_style }}">
-                  </a>
+                  <img src="{{ item['image'] }}" style="{{ thumb_style }}" onclick="const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out';o.onclick=function(){o.remove()};const i=document.createElement('img');i.src='{{ item['image'] }}';i.style.cssText='max-width:90vw;max-height:90vh;border-radius:8px';o.appendChild(i);document.body.appendChild(o)">
                 {% else %}
                   <div style="{{ ph_style }}"></div>
                 {% endif %}
@@ -117,17 +112,16 @@ cards:
     ignore_line_breaks: true
     content: |
       {% set items = state_attr('sensor.chenoweth_school_menu_lunch_today', 'items') %}
-      {% set tile_style    = "display:flex;flex-direction:column;align-items:center;text-align:center;" %}
-      {% set entree_style  = tile_style + "flex:1 1 0;min-width:0;" %}
-      {% set link_style    = "width:100%;display:block;line-height:0;" %}
-      {% set thumb_style   = "width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--divider-color);display:block;" %}
+      {% set tile_style    = "display:flex;flex-direction:column;align-items:center;text-align:center;flex:1 1 0;min-width:0;" %}
+      {% set entree_style  = tile_style %}
+      {% set thumb_style   = "width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--divider-color);display:block;cursor:zoom-in;" %}
       {% set ph_style      = "width:100%;aspect-ratio:1;border-radius:10px;background:var(--secondary-background-color);border:1px solid var(--divider-color);" %}
       {% set name_e_style  = "font-size:14px;font-weight:600;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" %}
       {% set name_s_style  = "font-size:12px;font-weight:500;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" %}
       {% set cat_style     = "font-size:10px;color:var(--secondary-text-color);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;" %}
       {% set msg_style     = "color:var(--secondary-text-color);font-size:14px;margin:4px 0;" %}
       {% set row_e_style   = "display:flex;flex-direction:row;gap:14px;padding:4px 0;margin-bottom:16px;" %}
-      {% set row_s_style   = "display:grid;grid-template-columns:repeat(auto-fit,minmax(82px,1fr));gap:14px;padding:4px 0;" %}
+      {% set row_s_style   = "display:flex;flex-direction:row;gap:14px;padding:4px 0;" %}
 
       {% if items is none %}
         <p style="{{ msg_style }}">⏳ No menu data yet — call <code>nutrislice_menu.sync_menu</code>.</p>
@@ -141,9 +135,7 @@ cards:
             {% for item in entrees %}
               <div style="{{ entree_style }}">
                 {% if item['image'] %}
-                  <a href="{{ item['image'] }}" target="_blank" rel="noopener" style="{{ link_style }}">
-                    <img src="{{ item['image'] }}" style="{{ thumb_style }}">
-                  </a>
+                  <img src="{{ item['image'] }}" style="{{ thumb_style }}" onclick="const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out';o.onclick=function(){o.remove()};const i=document.createElement('img');i.src='{{ item['image'] }}';i.style.cssText='max-width:90vw;max-height:90vh;border-radius:8px';o.appendChild(i);document.body.appendChild(o)">
                 {% else %}
                   <div style="{{ ph_style }}"></div>
                 {% endif %}
@@ -157,9 +149,7 @@ cards:
             {% for item in sides %}
               <div style="{{ tile_style }}">
                 {% if item['image'] %}
-                  <a href="{{ item['image'] }}" target="_blank" rel="noopener" style="{{ link_style }}">
-                    <img src="{{ item['image'] }}" style="{{ thumb_style }}">
-                  </a>
+                  <img src="{{ item['image'] }}" style="{{ thumb_style }}" onclick="const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out';o.onclick=function(){o.remove()};const i=document.createElement('img');i.src='{{ item['image'] }}';i.style.cssText='max-width:90vw;max-height:90vh;border-radius:8px';o.appendChild(i);document.body.appendChild(o)">
                 {% else %}
                   <div style="{{ ph_style }}"></div>
                 {% endif %}
