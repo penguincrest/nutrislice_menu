@@ -77,15 +77,15 @@ cards:
         <div class="menu-row entrees">
         {% for item in entrees %}
           <div class="menu-tile entree">
-            {% if item.image %}
+            {% if item['image'] %}
               <input type="checkbox" id="zoom-bk-e{{ loop.index }}" class="zoom-toggle">
               <label for="zoom-bk-e{{ loop.index }}" class="zoom-label">
-                <img src="{{ item.image }}" class="zoom-thumb" onerror="this.style.display='none'">
+                <img src="{{ item['image'] }}" class="zoom-thumb">
               </label>
             {% else %}
               <div class="placeholder"></div>
             {% endif %}
-            <span class="tile-name">{{ item.name }}</span>
+            <span class="tile-name">{{ item['name'] }}</span>
           </div>
         {% endfor %}
         </div>
@@ -94,17 +94,17 @@ cards:
         <div class="menu-row sides">
         {% for item in sides %}
           <div class="menu-tile side">
-            {% if item.image %}
+            {% if item['image'] %}
               <input type="checkbox" id="zoom-bk-s{{ loop.index }}" class="zoom-toggle">
               <label for="zoom-bk-s{{ loop.index }}" class="zoom-label">
-                <img src="{{ item.image }}" class="zoom-thumb" onerror="this.style.display='none'">
+                <img src="{{ item['image'] }}" class="zoom-thumb">
               </label>
             {% else %}
               <div class="placeholder"></div>
             {% endif %}
-            <span class="tile-name">{{ item.name }}</span>
-            {% if item.category %}
-              <span class="tile-cat">{{ item.category }}</span>
+            <span class="tile-name">{{ item['name'] }}</span>
+            {% if item['category'] %}
+              <span class="tile-cat">{{ item['category'] }}</span>
             {% endif %}
           </div>
         {% endfor %}
@@ -202,15 +202,15 @@ cards:
         <div class="menu-row entrees">
         {% for item in entrees %}
           <div class="menu-tile entree">
-            {% if item.image %}
+            {% if item['image'] %}
               <input type="checkbox" id="zoom-ln-e{{ loop.index }}" class="zoom-toggle">
               <label for="zoom-ln-e{{ loop.index }}" class="zoom-label">
-                <img src="{{ item.image }}" class="zoom-thumb" onerror="this.style.display='none'">
+                <img src="{{ item['image'] }}" class="zoom-thumb">
               </label>
             {% else %}
               <div class="placeholder"></div>
             {% endif %}
-            <span class="tile-name">{{ item.name }}</span>
+            <span class="tile-name">{{ item['name'] }}</span>
           </div>
         {% endfor %}
         </div>
@@ -219,17 +219,17 @@ cards:
         <div class="menu-row sides">
         {% for item in sides %}
           <div class="menu-tile side">
-            {% if item.image %}
+            {% if item['image'] %}
               <input type="checkbox" id="zoom-ln-s{{ loop.index }}" class="zoom-toggle">
               <label for="zoom-ln-s{{ loop.index }}" class="zoom-label">
-                <img src="{{ item.image }}" class="zoom-thumb" onerror="this.style.display='none'">
+                <img src="{{ item['image'] }}" class="zoom-thumb">
               </label>
             {% else %}
               <div class="placeholder"></div>
             {% endif %}
-            <span class="tile-name">{{ item.name }}</span>
-            {% if item.category %}
-              <span class="tile-cat">{{ item.category }}</span>
+            <span class="tile-name">{{ item['name'] }}</span>
+            {% if item['category'] %}
+              <span class="tile-cat">{{ item['category'] }}</span>
             {% endif %}
           </div>
         {% endfor %}
