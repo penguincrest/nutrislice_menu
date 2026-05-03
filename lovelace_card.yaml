@@ -1,11 +1,12 @@
 # ─── Nutrislice School Menu – Lovelace card ──────────────────────────────────
-# Before 9:30 AM  → shows today's menu
-# 9:30 AM onwards → shows tomorrow's menu
+# Before 9:30 AM  → defaults to TODAY's menu
+# 9:30 AM onwards → defaults to TOMORROW's menu
+# Prev/next buttons in the header navigate to other days; reloading the
+# page resets to the default day above.
 #
 # Entity IDs for Chenoweth Elementary (JCPS):
 #   sensor.chenoweth_school_menu_breakfast_today
 #   sensor.chenoweth_school_menu_lunch_today
-#   calendar.chenoweth_menu_school_menu
 #
 # Find your real entity IDs under:
 #   Settings → Devices & Services → Nutrislice School Menu → your device
@@ -19,8 +20,21 @@
 # sanitizer.  That's fine for prose, but it strips inline `style=""`
 # attributes, mangles indented HTML into `<pre><code>` blocks, breaks
 # out of HTML-block mode at blank lines, and drops `<label>`/`<span>`.
-# html-template-card is purpose-built for "Jinja → HTML, render verbatim,"
-# which is exactly what this card needs.
+# html-template-card is purpose-built for "Jinja → HTML, render verbatim."
+#
+# How the day navigation works:
+# Each meal card pre-renders every available date as a `<div data-ns-day>`
+# block, all hidden except the one matching the sensor's current date
+# attribute (today/tomorrow per the integration's flip logic).  The date
+# header card holds prev/next buttons whose onclick handlers toggle
+# visibility across BOTH meal cards (querying the whole document for
+# `[data-ns-day]`).  State lives only in the DOM, so a page reload
+# re-runs the Jinja and snaps back to today/tomorrow.
+#
+# A `window.nsNav` helper is defined once via an <img onerror> trick
+# (html-template-card renders verbatim HTML but does not execute
+# <script> tags via innerHTML; inline event handlers do fire, so we use
+# onerror on a 0-byte data: URL to bootstrap the function).
 #
 # ALWAYS COPY THIS FILE FROM THE RAW GITHUB URL — chat clients and
 # rendered GitHub views silently rewrite `item.name` into a markdown
@@ -30,143 +44,205 @@
 type: vertical-stack
 cards:
 
-  # Date header
+  # Date header with prev / next day navigation
   - type: custom:html-template-card
     ignore_line_breaks: true
     content: |
       {% set sensor = 'sensor.chenoweth_school_menu_breakfast_today' %}
-      {% set date_str = state_attr(sensor, 'date') %}
-      {% if date_str %}
-        {% set d = strptime(date_str, '%Y-%m-%d') %}
+      {% set initial = state_attr(sensor, 'date') %}
+      {% set menu = state_attr(sensor, 'menu_by_date') or {} %}
+      {% set dates = menu.keys() | list | sort %}
+
+      <img src="data:," style="display:none" onerror="
+        if (window.nsNav) return;
+        window.nsNav = function(dir) {
+          const all = [...new Set([...document.querySelectorAll('[data-ns-day]')].map(e => e.dataset.nsDay))].sort();
+          if (!all.length) return;
+          const cur = document.getElementById('ns-current');
+          const idx = Math.max(0, Math.min(all.length - 1, all.indexOf(cur.dataset.date) + dir));
+          const next = all[idx];
+          cur.dataset.date = next;
+          document.querySelectorAll('[data-ns-day]').forEach(e => {
+            e.style.display = (e.dataset.nsDay === next) ? '' : 'none';
+          });
+          const d = new Date(next + 'T00:00:00');
+          const today = new Date(); today.setHours(0,0,0,0);
+          const tmw = new Date(today); tmw.setDate(tmw.getDate() + 1);
+          let prefix;
+          if (d.getTime() === today.getTime()) prefix = 'Today';
+          else if (d.getTime() === tmw.getTime()) prefix = 'Tomorrow';
+          else prefix = d.toLocaleDateString('en-US', {weekday:'long'});
+          const full = d.toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
+          document.getElementById('ns-label').textContent = prefix + ' — ' + full;
+          document.getElementById('ns-prev').disabled = (idx === 0);
+          document.getElementById('ns-next').disabled = (idx === all.length - 1);
+        };
+      ">
+
+      {% if initial and dates %}
+        {% set d = strptime(initial, '%Y-%m-%d') %}
         {% set today_str = now().strftime('%Y-%m-%d') %}
         {% set tomorrow_str = (now() + timedelta(days=1)).strftime('%Y-%m-%d') %}
-        {% if date_str == today_str %}{% set label = 'Today' %}
-        {% elif date_str == tomorrow_str %}{% set label = 'Tomorrow' %}
+        {% if initial == today_str %}{% set label = 'Today' %}
+        {% elif initial == tomorrow_str %}{% set label = 'Tomorrow' %}
         {% else %}{% set label = d.strftime('%A') %}
         {% endif %}
-        <p style="font-size:15px;font-weight:500;color:var(--primary-text-color);margin:0;">
-          {{ label }} — {{ d.strftime('%A, %B %-d') }}
-        </p>
+        {% set first_idx = dates.index(initial) if initial in dates else 0 %}
+        {% set is_first = (first_idx == 0) %}
+        {% set is_last = (first_idx == dates | length - 1) %}
+
+        <div id="ns-current" data-date="{{ initial }}" style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+          <button id="ns-prev" onclick="window.nsNav(-1)"
+                  {% if is_first %}disabled{% endif %}
+                  style="background:none;border:none;color:var(--primary-text-color);font-size:22px;line-height:1;cursor:pointer;padding:4px 10px;border-radius:6px;">
+            ‹
+          </button>
+          <span id="ns-label" style="font-size:15px;font-weight:500;color:var(--primary-text-color);text-align:center;flex:1;">
+            {{ label }} — {{ d.strftime('%A, %B %-d') }}
+          </span>
+          <button id="ns-next" onclick="window.nsNav(1)"
+                  {% if is_last %}disabled{% endif %}
+                  style="background:none;border:none;color:var(--primary-text-color);font-size:22px;line-height:1;cursor:pointer;padding:4px 10px;border-radius:6px;">
+            ›
+          </button>
+        </div>
+      {% else %}
+        <p style="color:var(--secondary-text-color);font-size:14px;margin:4px 0;">⏳ No menu data yet — call <code>nutrislice_menu.sync_menu</code>.</p>
       {% endif %}
 
-  # Breakfast
+  # Breakfast — one <div data-ns-day> per available date; only the matching-
+  # initial-date one is visible on first render.  nsNav() toggles visibility.
   - type: custom:html-template-card
     title: "🍳 Breakfast"
     ignore_line_breaks: true
     content: |
-      {% set items = state_attr('sensor.chenoweth_school_menu_breakfast_today', 'items') %}
+      {% set sensor = 'sensor.chenoweth_school_menu_breakfast_today' %}
+      {% set initial = state_attr(sensor, 'date') %}
+      {% set menu = state_attr(sensor, 'menu_by_date') or {} %}
+      {% set dates = menu.keys() | list | sort %}
+
       {% set tile_style    = "display:flex;flex-direction:column;align-items:center;text-align:center;flex:1 1 0;min-width:0;" %}
-      {% set entree_style  = tile_style %}
       {% set thumb_style   = "width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--divider-color);display:block;cursor:zoom-in;" %}
       {% set ph_style      = "width:100%;aspect-ratio:1;border-radius:10px;background:var(--secondary-background-color);border:1px solid var(--divider-color);" %}
       {% set name_e_style  = "font-size:14px;font-weight:600;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" %}
       {% set name_s_style  = "font-size:12px;font-weight:500;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" %}
       {% set cat_style     = "font-size:10px;color:var(--secondary-text-color);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;" %}
-      {% set cat_display   = {'vegetable': 'Veggie'} %}
       {% set msg_style     = "color:var(--secondary-text-color);font-size:14px;margin:4px 0;" %}
-      {% set row_e_style   = "display:flex;flex-direction:row;gap:14px;padding:4px 0;margin-bottom:16px;" %}
+      {% set row_style     = "display:flex;flex-direction:row;gap:14px;padding:4px 0;margin-bottom:16px;" %}
       {% set row_s_style   = "display:flex;flex-direction:row;gap:14px;padding:4px 0;" %}
+      {% set cat_display   = {'vegetable': 'Veggie'} %}
 
-      {% if items is none %}
+      {% if not dates %}
         <p style="{{ msg_style }}">⏳ No menu data yet — call <code>nutrislice_menu.sync_menu</code>.</p>
-      {% elif items | length == 0 %}
-        <p style="{{ msg_style }}">No breakfast served.</p>
       {% else %}
-        {% set entrees = items | selectattr('category','equalto','entree') | list %}
-        {% set sides   = items | rejectattr('category','equalto','entree') | list %}
-        {% if entrees | length > 0 %}
-          <div style="{{ row_e_style }}">
-            {% for item in entrees %}
-              <div style="{{ entree_style }}">
-                {% if item['image'] %}
-                  <img src="{{ item['image'] }}" style="{{ thumb_style }}" onclick="const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out';o.onclick=function(){o.remove()};const i=document.createElement('img');i.src='{{ item['image'] }}';i.style.cssText='max-width:90vw;max-height:90vh;border-radius:8px';o.appendChild(i);document.body.appendChild(o)">
-                {% else %}
-                  <div style="{{ ph_style }}"></div>
-                {% endif %}
-                <div style="{{ name_e_style }}">{{ item['name'] }}</div>
-              </div>
-            {% endfor %}
+        {% for d in dates %}
+          {% set items = menu[d] %}
+          <div data-ns-day="{{ d }}" data-meal="breakfast" style="{% if d != initial %}display:none;{% endif %}">
+            {% if items | length == 0 %}
+              <p style="{{ msg_style }}">No breakfast served.</p>
+            {% else %}
+              {% set entrees = items | selectattr('category','equalto','entree') | list %}
+              {% set sides   = items | rejectattr('category','equalto','entree') | list %}
+              {% if entrees | length > 0 %}
+                <div style="{{ row_style }}">
+                  {% for item in entrees %}
+                    <div style="{{ tile_style }}">
+                      {% if item['image'] %}
+                        <img src="{{ item['image'] }}" loading="lazy" style="{{ thumb_style }}" onclick="const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out';o.onclick=function(){o.remove()};const i=document.createElement('img');i.src='{{ item['image'] }}';i.style.cssText='max-width:90vw;max-height:90vh;border-radius:8px';o.appendChild(i);document.body.appendChild(o)">
+                      {% else %}
+                        <div style="{{ ph_style }}"></div>
+                      {% endif %}
+                      <div style="{{ name_e_style }}">{{ item['name'] }}</div>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+              {% if sides | length > 0 %}
+                <div style="{{ row_s_style }}">
+                  {% for item in sides %}
+                    <div style="{{ tile_style }}">
+                      {% if item['image'] %}
+                        <img src="{{ item['image'] }}" loading="lazy" style="{{ thumb_style }}" onclick="const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out';o.onclick=function(){o.remove()};const i=document.createElement('img');i.src='{{ item['image'] }}';i.style.cssText='max-width:90vw;max-height:90vh;border-radius:8px';o.appendChild(i);document.body.appendChild(o)">
+                      {% else %}
+                        <div style="{{ ph_style }}"></div>
+                      {% endif %}
+                      <div style="{{ name_s_style }}">{{ item['name'] }}</div>
+                      {% if item['category'] %}
+                        <div style="{{ cat_style }}">{{ cat_display.get(item['category'], item['category']) }}</div>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endif %}
           </div>
-        {% endif %}
-        {% if sides | length > 0 %}
-          <div style="{{ row_s_style }}">
-            {% for item in sides %}
-              <div style="{{ tile_style }}">
-                {% if item['image'] %}
-                  <img src="{{ item['image'] }}" style="{{ thumb_style }}" onclick="const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out';o.onclick=function(){o.remove()};const i=document.createElement('img');i.src='{{ item['image'] }}';i.style.cssText='max-width:90vw;max-height:90vh;border-radius:8px';o.appendChild(i);document.body.appendChild(o)">
-                {% else %}
-                  <div style="{{ ph_style }}"></div>
-                {% endif %}
-                <div style="{{ name_s_style }}">{{ item['name'] }}</div>
-                {% if item['category'] %}
-                  <div style="{{ cat_style }}">{{ cat_display.get(item['category'], item['category']) }}</div>
-                {% endif %}
-              </div>
-            {% endfor %}
-          </div>
-        {% endif %}
+        {% endfor %}
       {% endif %}
 
-  # Lunch
+  # Lunch — same structure as Breakfast, different sensor.
   - type: custom:html-template-card
     title: "🥗 Lunch"
     ignore_line_breaks: true
     content: |
-      {% set items = state_attr('sensor.chenoweth_school_menu_lunch_today', 'items') %}
+      {% set sensor = 'sensor.chenoweth_school_menu_lunch_today' %}
+      {% set initial = state_attr(sensor, 'date') %}
+      {% set menu = state_attr(sensor, 'menu_by_date') or {} %}
+      {% set dates = menu.keys() | list | sort %}
+
       {% set tile_style    = "display:flex;flex-direction:column;align-items:center;text-align:center;flex:1 1 0;min-width:0;" %}
-      {% set entree_style  = tile_style %}
       {% set thumb_style   = "width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--divider-color);display:block;cursor:zoom-in;" %}
       {% set ph_style      = "width:100%;aspect-ratio:1;border-radius:10px;background:var(--secondary-background-color);border:1px solid var(--divider-color);" %}
       {% set name_e_style  = "font-size:14px;font-weight:600;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" %}
       {% set name_s_style  = "font-size:12px;font-weight:500;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" %}
       {% set cat_style     = "font-size:10px;color:var(--secondary-text-color);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;" %}
-      {% set cat_display   = {'vegetable': 'Veggie'} %}
       {% set msg_style     = "color:var(--secondary-text-color);font-size:14px;margin:4px 0;" %}
-      {% set row_e_style   = "display:flex;flex-direction:row;gap:14px;padding:4px 0;margin-bottom:16px;" %}
+      {% set row_style     = "display:flex;flex-direction:row;gap:14px;padding:4px 0;margin-bottom:16px;" %}
       {% set row_s_style   = "display:flex;flex-direction:row;gap:14px;padding:4px 0;" %}
+      {% set cat_display   = {'vegetable': 'Veggie'} %}
 
-      {% if items is none %}
+      {% if not dates %}
         <p style="{{ msg_style }}">⏳ No menu data yet — call <code>nutrislice_menu.sync_menu</code>.</p>
-      {% elif items | length == 0 %}
-        <p style="{{ msg_style }}">No lunch served.</p>
       {% else %}
-        {% set entrees = items | selectattr('category','equalto','entree') | list %}
-        {% set sides   = items | rejectattr('category','equalto','entree') | list %}
-        {% if entrees | length > 0 %}
-          <div style="{{ row_e_style }}">
-            {% for item in entrees %}
-              <div style="{{ entree_style }}">
-                {% if item['image'] %}
-                  <img src="{{ item['image'] }}" style="{{ thumb_style }}" onclick="const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out';o.onclick=function(){o.remove()};const i=document.createElement('img');i.src='{{ item['image'] }}';i.style.cssText='max-width:90vw;max-height:90vh;border-radius:8px';o.appendChild(i);document.body.appendChild(o)">
-                {% else %}
-                  <div style="{{ ph_style }}"></div>
-                {% endif %}
-                <div style="{{ name_e_style }}">{{ item['name'] }}</div>
-              </div>
-            {% endfor %}
+        {% for d in dates %}
+          {% set items = menu[d] %}
+          <div data-ns-day="{{ d }}" data-meal="lunch" style="{% if d != initial %}display:none;{% endif %}">
+            {% if items | length == 0 %}
+              <p style="{{ msg_style }}">No lunch served.</p>
+            {% else %}
+              {% set entrees = items | selectattr('category','equalto','entree') | list %}
+              {% set sides   = items | rejectattr('category','equalto','entree') | list %}
+              {% if entrees | length > 0 %}
+                <div style="{{ row_style }}">
+                  {% for item in entrees %}
+                    <div style="{{ tile_style }}">
+                      {% if item['image'] %}
+                        <img src="{{ item['image'] }}" loading="lazy" style="{{ thumb_style }}" onclick="const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out';o.onclick=function(){o.remove()};const i=document.createElement('img');i.src='{{ item['image'] }}';i.style.cssText='max-width:90vw;max-height:90vh;border-radius:8px';o.appendChild(i);document.body.appendChild(o)">
+                      {% else %}
+                        <div style="{{ ph_style }}"></div>
+                      {% endif %}
+                      <div style="{{ name_e_style }}">{{ item['name'] }}</div>
+                    </div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+              {% if sides | length > 0 %}
+                <div style="{{ row_s_style }}">
+                  {% for item in sides %}
+                    <div style="{{ tile_style }}">
+                      {% if item['image'] %}
+                        <img src="{{ item['image'] }}" loading="lazy" style="{{ thumb_style }}" onclick="const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out';o.onclick=function(){o.remove()};const i=document.createElement('img');i.src='{{ item['image'] }}';i.style.cssText='max-width:90vw;max-height:90vh;border-radius:8px';o.appendChild(i);document.body.appendChild(o)">
+                      {% else %}
+                        <div style="{{ ph_style }}"></div>
+                      {% endif %}
+                      <div style="{{ name_s_style }}">{{ item['name'] }}</div>
+                      {% if item['category'] %}
+                        <div style="{{ cat_style }}">{{ cat_display.get(item['category'], item['category']) }}</div>
+                      {% endif %}
+                    </div>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endif %}
           </div>
-        {% endif %}
-        {% if sides | length > 0 %}
-          <div style="{{ row_s_style }}">
-            {% for item in sides %}
-              <div style="{{ tile_style }}">
-                {% if item['image'] %}
-                  <img src="{{ item['image'] }}" style="{{ thumb_style }}" onclick="const o=document.createElement('div');o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:zoom-out';o.onclick=function(){o.remove()};const i=document.createElement('img');i.src='{{ item['image'] }}';i.style.cssText='max-width:90vw;max-height:90vh;border-radius:8px';o.appendChild(i);document.body.appendChild(o)">
-                {% else %}
-                  <div style="{{ ph_style }}"></div>
-                {% endif %}
-                <div style="{{ name_s_style }}">{{ item['name'] }}</div>
-                {% if item['category'] %}
-                  <div style="{{ cat_style }}">{{ cat_display.get(item['category'], item['category']) }}</div>
-                {% endif %}
-              </div>
-            {% endfor %}
-          </div>
-        {% endif %}
+        {% endfor %}
       {% endif %}
-
-  # Weekly calendar view
-  - type: calendar
-    entities:
-      - calendar.chenoweth_menu_school_menu
-    initial_view: dayGridWeek

@@ -100,6 +100,13 @@ class NutrisliceMenuSensor(CoordinatorEntity[NutrisliceCoordinator], SensorEntit
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         items = self._display_items()
+        # Full window of menus for this meal type, keyed by date.  Used by the
+        # card's prev/next-day navigation so it doesn't need a separate sensor
+        # or service call per day.
+        menu_by_date = {
+            d: meals.get(self._meal_type, [])
+            for d, meals in (self.coordinator.data or {}).items()
+        }
         return {
             "items":      items,
             "hero_image": next((i["image"] for i in items if i.get("image")), ""),
@@ -108,6 +115,7 @@ class NutrisliceMenuSensor(CoordinatorEntity[NutrisliceCoordinator], SensorEntit
             "showing":    "tomorrow" if self._is_showing_tomorrow() else "today",
             "school":     self.coordinator.school,
             "district":   self.coordinator.district,
+            "menu_by_date": menu_by_date,
         }
 
     def _is_showing_tomorrow(self) -> bool:
