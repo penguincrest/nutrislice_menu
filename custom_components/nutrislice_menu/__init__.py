@@ -15,29 +15,25 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall
 
-from .const import (
-    CONF_DISTRICT,
-    CONF_SCHOOL,
-    DATA_COORDINATOR,
-    DOMAIN,
-    SERVICE_SYNC_MENU,
-)
+from .const import CONF_DISTRICT, CONF_SCHOOL, DOMAIN, SERVICE_SYNC_MENU
 from .coordinator import NutrisliceCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.CALENDAR]
 
+# HA 2024.4+ generic ConfigEntry — gives platform code typed access to the
+# coordinator via entry.runtime_data, removing the hass.data bookkeeping.
+NutrisliceConfigEntry = ConfigEntry[NutrisliceCoordinator]
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+
+async def async_setup_entry(hass: HomeAssistant, entry: NutrisliceConfigEntry) -> bool:
     """Set up Nutrislice School Menu from a config entry."""
-    hass.data.setdefault(DOMAIN, {})
-
     coordinator = NutrisliceCoordinator(
         hass, entry.data[CONF_DISTRICT], entry.data[CONF_SCHOOL]
     )
     await coordinator.async_config_entry_first_refresh()
-    hass.data[DOMAIN][entry.entry_id] = {DATA_COORDINATOR: coordinator}
+    entry.runtime_data = coordinator
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -52,10 +48,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: NutrisliceConfigEntry) -> bool:
     """Unload the integration cleanly."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
-        hass.data[DOMAIN].pop(entry.entry_id, None)
         hass.services.async_remove(DOMAIN, SERVICE_SYNC_MENU)
     return unload_ok

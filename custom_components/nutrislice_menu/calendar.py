@@ -9,14 +9,14 @@ import datetime
 import logging
 
 from homeassistant.components.calendar import CalendarEntity, CalendarEvent
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 import homeassistant.util.dt as dt_util
 
-from .const import DATA_COORDINATOR, DOMAIN
+from . import NutrisliceConfigEntry
+from .const import DOMAIN
 from .coordinator import NutrisliceCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -30,13 +30,10 @@ EVENT_END_HOUR = 15
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: NutrisliceConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: NutrisliceCoordinator = (
-        hass.data[DOMAIN][entry.entry_id][DATA_COORDINATOR]
-    )
-    async_add_entities([NutrisliceCalendar(coordinator, entry.entry_id)])
+    async_add_entities([NutrisliceCalendar(entry.runtime_data, entry.entry_id)])
 
 
 class NutrisliceCalendar(CoordinatorEntity[NutrisliceCoordinator], CalendarEntity):
