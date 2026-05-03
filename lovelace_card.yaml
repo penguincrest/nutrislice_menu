@@ -10,103 +10,168 @@
 # Find your real entity IDs under:
 #   Settings → Devices & Services → Nutrislice School Menu → your device
 #
-# Markdown-card gotchas this template works around:
-#   1) Lines indented 4+ spaces become <pre><code> blocks → keep all template
-#      content at the SAME column with `|` (literal) scalars.
-#   2) Blank lines break out of HTML-block mode → use `{%- -%}` whitespace
-#      controls so the rendered output is one continuous string.
-#   3) The HTML sanitizer strips <label> and <span> → use <div>+<img> only,
-#      and <a> for click-to-open-image-in-new-tab.
-#   4) Chat / clipboard auto-linkers convert `x.date` and `x.name` into
-#      markdown links because `.date` and `.name` are valid TLDs.  Use
-#      bracket notation (item['name']) and avoid `.date()` calls so the
-#      template survives copy-paste through any tool.
-#   5) card-mod CSS rules are unreliable here — class attributes can be
-#      stripped by the sanitizer, and the addon may not be installed.
-#      All layout styles are therefore applied inline via style="..." on
-#      each element so they work without any external dependency.
+# DEPENDENCIES (one HACS plugin):
+#   • html-template-card by PiotrMachowski
+#     https://github.com/PiotrMachowski/Home-Assistant-Lovelace-HTML-Jinja2-Template-card
 #
-# >>> ALWAYS COPY THIS FILE FROM THE RAW GITHUB URL <<<
+# Why html-template-card and not the built-in markdown card?
+# The markdown card runs everything through a markdown parser + HTML
+# sanitizer.  That's fine for prose, but it strips inline `style=""`
+# attributes, mangles indented HTML into `<pre><code>` blocks, breaks
+# out of HTML-block mode at blank lines, and drops `<label>`/`<span>`.
+# html-template-card is purpose-built for "Jinja → HTML, render verbatim,"
+# which is exactly what this card needs.
+#
+# ALWAYS COPY THIS FILE FROM THE RAW GITHUB URL — chat clients and
+# rendered GitHub views silently rewrite `item.name` into a markdown
+# link because `.name` is a real TLD.  Use bracket notation only.
 #   https://raw.githubusercontent.com/penguincrest/nutrislice_menu/main/lovelace_card.yaml
-#   The "rendered" GitHub view and most chat clients silently insert
-#   markdown links into the Jinja, breaking the template.
 
 type: vertical-stack
 cards:
 
   # Date header
-  - type: markdown
+  - type: custom:html-template-card
+    ignore_line_breaks: true
     content: |
-      {%- set sensor = 'sensor.chenoweth_school_menu_breakfast_today' -%}
-      {%- set date_str = state_attr(sensor, 'date') -%}
-      {%- if date_str -%}
-      {%- set d = strptime(date_str, '%Y-%m-%d') -%}
-      {%- set today_str = now().strftime('%Y-%m-%d') -%}
-      {%- set tomorrow_str = (now() + timedelta(days=1)).strftime('%Y-%m-%d') -%}
-      {%- if date_str == today_str -%}{%- set label = 'Today' -%}
-      {%- elif date_str == tomorrow_str -%}{%- set label = 'Tomorrow' -%}
-      {%- else -%}{%- set label = d.strftime('%A') -%}
-      {%- endif -%}
-      <p style="font-size:15px;font-weight:500;color:var(--primary-text-color);margin:0;">{{ label }} — {{ d.strftime('%A, %B %-d') }}</p>
-      {%- endif -%}
+      {% set sensor = 'sensor.chenoweth_school_menu_breakfast_today' %}
+      {% set date_str = state_attr(sensor, 'date') %}
+      {% if date_str %}
+        {% set d = strptime(date_str, '%Y-%m-%d') %}
+        {% set today_str = now().strftime('%Y-%m-%d') %}
+        {% set tomorrow_str = (now() + timedelta(days=1)).strftime('%Y-%m-%d') %}
+        {% if date_str == today_str %}{% set label = 'Today' %}
+        {% elif date_str == tomorrow_str %}{% set label = 'Tomorrow' %}
+        {% else %}{% set label = d.strftime('%A') %}
+        {% endif %}
+        <p style="font-size:15px;font-weight:500;color:var(--primary-text-color);margin:0;">
+          {{ label }} — {{ d.strftime('%A, %B %-d') }}
+        </p>
+      {% endif %}
 
   # Breakfast
-  - type: markdown
+  - type: custom:html-template-card
     title: "🍳 Breakfast"
+    ignore_line_breaks: true
     content: |
-      {%- set sensor = 'sensor.chenoweth_school_menu_breakfast_today' -%}
-      {%- set items = state_attr(sensor, 'items') -%}
-      {%- set tile = "display:flex;flex-direction:column;align-items:center;text-align:center;" -%}
-      {%- set link = "width:100%;display:block;line-height:0;" -%}
-      {%- set thumb = "width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--divider-color);display:block;" -%}
-      {%- set ph = "width:100%;aspect-ratio:1;border-radius:10px;background:var(--secondary-background-color);border:1px solid var(--divider-color);" -%}
-      {%- set name_e = "font-size:14px;font-weight:600;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" -%}
-      {%- set name_s = "font-size:12px;font-weight:500;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" -%}
-      {%- set cat = "font-size:10px;color:var(--secondary-text-color);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;" -%}
-      {%- set msg = "color:var(--secondary-text-color);font-size:14px;margin:4px 0;" -%}
-      {%- if items is none -%}
-      <p style="{{ msg }}">⏳ No menu data yet — call <code>nutrislice_menu.sync_menu</code>.</p>
-      {%- elif items | length == 0 -%}
-      <p style="{{ msg }}">No breakfast served.</p>
-      {%- else -%}
-      {%- set entrees = items | selectattr('category','equalto','entree') | list -%}
-      {%- set sides = items | rejectattr('category','equalto','entree') | list -%}
-      {%- if entrees | length > 0 -%}
-      <div style="display:flex;flex-direction:row;gap:14px;padding:4px 0;margin-bottom:16px;">{%- for item in entrees -%}<div style="{{ tile }}flex:1 1 0;min-width:0;">{%- if item['image'] -%}<a href="{{ item['image'] }}" target="_blank" rel="noopener" style="{{ link }}"><img src="{{ item['image'] }}" style="{{ thumb }}"></a>{%- else -%}<div style="{{ ph }}"></div>{%- endif -%}<div style="{{ name_e }}">{{ item['name'] }}</div></div>{%- endfor -%}</div>
-      {%- endif -%}
-      {%- if sides | length > 0 -%}
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(82px,1fr));gap:14px;padding:4px 0;">{%- for item in sides -%}<div style="{{ tile }}">{%- if item['image'] -%}<a href="{{ item['image'] }}" target="_blank" rel="noopener" style="{{ link }}"><img src="{{ item['image'] }}" style="{{ thumb }}"></a>{%- else -%}<div style="{{ ph }}"></div>{%- endif -%}<div style="{{ name_s }}">{{ item['name'] }}</div>{%- if item['category'] -%}<div style="{{ cat }}">{{ item['category'] }}</div>{%- endif -%}</div>{%- endfor -%}</div>
-      {%- endif -%}
-      {%- endif -%}
+      {% set items = state_attr('sensor.chenoweth_school_menu_breakfast_today', 'items') %}
+      {% set tile_style    = "display:flex;flex-direction:column;align-items:center;text-align:center;" %}
+      {% set entree_style  = tile_style + "flex:1 1 0;min-width:0;" %}
+      {% set link_style    = "width:100%;display:block;line-height:0;" %}
+      {% set thumb_style   = "width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--divider-color);display:block;" %}
+      {% set ph_style      = "width:100%;aspect-ratio:1;border-radius:10px;background:var(--secondary-background-color);border:1px solid var(--divider-color);" %}
+      {% set name_e_style  = "font-size:14px;font-weight:600;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" %}
+      {% set name_s_style  = "font-size:12px;font-weight:500;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" %}
+      {% set cat_style     = "font-size:10px;color:var(--secondary-text-color);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;" %}
+      {% set msg_style     = "color:var(--secondary-text-color);font-size:14px;margin:4px 0;" %}
+      {% set row_e_style   = "display:flex;flex-direction:row;gap:14px;padding:4px 0;margin-bottom:16px;" %}
+      {% set row_s_style   = "display:grid;grid-template-columns:repeat(auto-fit,minmax(82px,1fr));gap:14px;padding:4px 0;" %}
+
+      {% if items is none %}
+        <p style="{{ msg_style }}">⏳ No menu data yet — call <code>nutrislice_menu.sync_menu</code>.</p>
+      {% elif items | length == 0 %}
+        <p style="{{ msg_style }}">No breakfast served.</p>
+      {% else %}
+        {% set entrees = items | selectattr('category','equalto','entree') | list %}
+        {% set sides   = items | rejectattr('category','equalto','entree') | list %}
+        {% if entrees | length > 0 %}
+          <div style="{{ row_e_style }}">
+            {% for item in entrees %}
+              <div style="{{ entree_style }}">
+                {% if item['image'] %}
+                  <a href="{{ item['image'] }}" target="_blank" rel="noopener" style="{{ link_style }}">
+                    <img src="{{ item['image'] }}" style="{{ thumb_style }}">
+                  </a>
+                {% else %}
+                  <div style="{{ ph_style }}"></div>
+                {% endif %}
+                <div style="{{ name_e_style }}">{{ item['name'] }}</div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+        {% if sides | length > 0 %}
+          <div style="{{ row_s_style }}">
+            {% for item in sides %}
+              <div style="{{ tile_style }}">
+                {% if item['image'] %}
+                  <a href="{{ item['image'] }}" target="_blank" rel="noopener" style="{{ link_style }}">
+                    <img src="{{ item['image'] }}" style="{{ thumb_style }}">
+                  </a>
+                {% else %}
+                  <div style="{{ ph_style }}"></div>
+                {% endif %}
+                <div style="{{ name_s_style }}">{{ item['name'] }}</div>
+                {% if item['category'] %}
+                  <div style="{{ cat_style }}">{{ item['category'] }}</div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endif %}
 
   # Lunch
-  - type: markdown
+  - type: custom:html-template-card
     title: "🥗 Lunch"
+    ignore_line_breaks: true
     content: |
-      {%- set sensor = 'sensor.chenoweth_school_menu_lunch_today' -%}
-      {%- set items = state_attr(sensor, 'items') -%}
-      {%- set tile = "display:flex;flex-direction:column;align-items:center;text-align:center;" -%}
-      {%- set link = "width:100%;display:block;line-height:0;" -%}
-      {%- set thumb = "width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--divider-color);display:block;" -%}
-      {%- set ph = "width:100%;aspect-ratio:1;border-radius:10px;background:var(--secondary-background-color);border:1px solid var(--divider-color);" -%}
-      {%- set name_e = "font-size:14px;font-weight:600;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" -%}
-      {%- set name_s = "font-size:12px;font-weight:500;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" -%}
-      {%- set cat = "font-size:10px;color:var(--secondary-text-color);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;" -%}
-      {%- set msg = "color:var(--secondary-text-color);font-size:14px;margin:4px 0;" -%}
-      {%- if items is none -%}
-      <p style="{{ msg }}">⏳ No menu data yet — call <code>nutrislice_menu.sync_menu</code>.</p>
-      {%- elif items | length == 0 -%}
-      <p style="{{ msg }}">No lunch served.</p>
-      {%- else -%}
-      {%- set entrees = items | selectattr('category','equalto','entree') | list -%}
-      {%- set sides = items | rejectattr('category','equalto','entree') | list -%}
-      {%- if entrees | length > 0 -%}
-      <div style="display:flex;flex-direction:row;gap:14px;padding:4px 0;margin-bottom:16px;">{%- for item in entrees -%}<div style="{{ tile }}flex:1 1 0;min-width:0;">{%- if item['image'] -%}<a href="{{ item['image'] }}" target="_blank" rel="noopener" style="{{ link }}"><img src="{{ item['image'] }}" style="{{ thumb }}"></a>{%- else -%}<div style="{{ ph }}"></div>{%- endif -%}<div style="{{ name_e }}">{{ item['name'] }}</div></div>{%- endfor -%}</div>
-      {%- endif -%}
-      {%- if sides | length > 0 -%}
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(82px,1fr));gap:14px;padding:4px 0;">{%- for item in sides -%}<div style="{{ tile }}">{%- if item['image'] -%}<a href="{{ item['image'] }}" target="_blank" rel="noopener" style="{{ link }}"><img src="{{ item['image'] }}" style="{{ thumb }}"></a>{%- else -%}<div style="{{ ph }}"></div>{%- endif -%}<div style="{{ name_s }}">{{ item['name'] }}</div>{%- if item['category'] -%}<div style="{{ cat }}">{{ item['category'] }}</div>{%- endif -%}</div>{%- endfor -%}</div>
-      {%- endif -%}
-      {%- endif -%}
+      {% set items = state_attr('sensor.chenoweth_school_menu_lunch_today', 'items') %}
+      {% set tile_style    = "display:flex;flex-direction:column;align-items:center;text-align:center;" %}
+      {% set entree_style  = tile_style + "flex:1 1 0;min-width:0;" %}
+      {% set link_style    = "width:100%;display:block;line-height:0;" %}
+      {% set thumb_style   = "width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--divider-color);display:block;" %}
+      {% set ph_style      = "width:100%;aspect-ratio:1;border-radius:10px;background:var(--secondary-background-color);border:1px solid var(--divider-color);" %}
+      {% set name_e_style  = "font-size:14px;font-weight:600;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" %}
+      {% set name_s_style  = "font-size:12px;font-weight:500;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" %}
+      {% set cat_style     = "font-size:10px;color:var(--secondary-text-color);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;" %}
+      {% set msg_style     = "color:var(--secondary-text-color);font-size:14px;margin:4px 0;" %}
+      {% set row_e_style   = "display:flex;flex-direction:row;gap:14px;padding:4px 0;margin-bottom:16px;" %}
+      {% set row_s_style   = "display:grid;grid-template-columns:repeat(auto-fit,minmax(82px,1fr));gap:14px;padding:4px 0;" %}
+
+      {% if items is none %}
+        <p style="{{ msg_style }}">⏳ No menu data yet — call <code>nutrislice_menu.sync_menu</code>.</p>
+      {% elif items | length == 0 %}
+        <p style="{{ msg_style }}">No lunch served.</p>
+      {% else %}
+        {% set entrees = items | selectattr('category','equalto','entree') | list %}
+        {% set sides   = items | rejectattr('category','equalto','entree') | list %}
+        {% if entrees | length > 0 %}
+          <div style="{{ row_e_style }}">
+            {% for item in entrees %}
+              <div style="{{ entree_style }}">
+                {% if item['image'] %}
+                  <a href="{{ item['image'] }}" target="_blank" rel="noopener" style="{{ link_style }}">
+                    <img src="{{ item['image'] }}" style="{{ thumb_style }}">
+                  </a>
+                {% else %}
+                  <div style="{{ ph_style }}"></div>
+                {% endif %}
+                <div style="{{ name_e_style }}">{{ item['name'] }}</div>
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+        {% if sides | length > 0 %}
+          <div style="{{ row_s_style }}">
+            {% for item in sides %}
+              <div style="{{ tile_style }}">
+                {% if item['image'] %}
+                  <a href="{{ item['image'] }}" target="_blank" rel="noopener" style="{{ link_style }}">
+                    <img src="{{ item['image'] }}" style="{{ thumb_style }}">
+                  </a>
+                {% else %}
+                  <div style="{{ ph_style }}"></div>
+                {% endif %}
+                <div style="{{ name_s_style }}">{{ item['name'] }}</div>
+                {% if item['category'] %}
+                  <div style="{{ cat_style }}">{{ item['category'] }}</div>
+                {% endif %}
+              </div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endif %}
 
   # Weekly calendar view
   - type: calendar
