@@ -21,6 +21,10 @@
 #      markdown links because `.date` and `.name` are valid TLDs.  Use
 #      bracket notation (item['name']) and avoid `.date()` calls so the
 #      template survives copy-paste through any tool.
+#   5) card-mod CSS rules are unreliable here — class attributes can be
+#      stripped by the sanitizer, and the addon may not be installed.
+#      All layout styles are therefore applied inline via style="..." on
+#      each element so they work without any external dependency.
 #
 # >>> ALWAYS COPY THIS FILE FROM THE RAW GITHUB URL <<<
 #   https://raw.githubusercontent.com/penguincrest/nutrislice_menu/main/lovelace_card.yaml
@@ -36,138 +40,73 @@ cards:
       {%- set sensor = 'sensor.chenoweth_school_menu_breakfast_today' -%}
       {%- set date_str = state_attr(sensor, 'date') -%}
       {%- if date_str -%}
-        {%- set d = strptime(date_str, '%Y-%m-%d') -%}
-        {%- set today_str = now().strftime('%Y-%m-%d') -%}
-        {%- set tomorrow_str = (now() + timedelta(days=1)).strftime('%Y-%m-%d') -%}
-        {%- if date_str == today_str -%}{%- set label = 'Today' -%}
-        {%- elif date_str == tomorrow_str -%}{%- set label = 'Tomorrow' -%}
-        {%- else -%}{%- set label = d.strftime('%A') -%}
-        {%- endif -%}
-        <p class="date-header">{{ label }} — {{ d.strftime('%A, %B %-d') }}</p>
+      {%- set d = strptime(date_str, '%Y-%m-%d') -%}
+      {%- set today_str = now().strftime('%Y-%m-%d') -%}
+      {%- set tomorrow_str = (now() + timedelta(days=1)).strftime('%Y-%m-%d') -%}
+      {%- if date_str == today_str -%}{%- set label = 'Today' -%}
+      {%- elif date_str == tomorrow_str -%}{%- set label = 'Tomorrow' -%}
+      {%- else -%}{%- set label = d.strftime('%A') -%}
       {%- endif -%}
-    card_mod:
-      style: |
-        ha-card {
-          background: none;
-          box-shadow: none;
-          border: none;
-          padding: 4px 0 0 0;
-        }
-        .date-header {
-          font-size: 15px;
-          font-weight: 500;
-          color: var(--primary-text-color);
-          margin: 0;
-        }
+      <p style="font-size:15px;font-weight:500;color:var(--primary-text-color);margin:0;">{{ label }} — {{ d.strftime('%A, %B %-d') }}</p>
+      {%- endif -%}
 
-  # Breakfast — defines anchors that the Lunch card reuses below.
+  # Breakfast
   - type: markdown
     title: "🍳 Breakfast"
     content: |
       {%- set sensor = 'sensor.chenoweth_school_menu_breakfast_today' -%}
       {%- set items = state_attr(sensor, 'items') -%}
+      {%- set tile = "display:flex;flex-direction:column;align-items:center;text-align:center;" -%}
+      {%- set link = "width:100%;display:block;line-height:0;" -%}
+      {%- set thumb = "width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--divider-color);display:block;" -%}
+      {%- set ph = "width:100%;aspect-ratio:1;border-radius:10px;background:var(--secondary-background-color);border:1px solid var(--divider-color);" -%}
+      {%- set name_e = "font-size:14px;font-weight:600;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" -%}
+      {%- set name_s = "font-size:12px;font-weight:500;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" -%}
+      {%- set cat = "font-size:10px;color:var(--secondary-text-color);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;" -%}
+      {%- set msg = "color:var(--secondary-text-color);font-size:14px;margin:4px 0;" -%}
       {%- if items is none -%}
-      <p class="state-msg">⏳ No menu data yet — call <code>nutrislice_menu.sync_menu</code>.</p>
+      <p style="{{ msg }}">⏳ No menu data yet — call <code>nutrislice_menu.sync_menu</code>.</p>
       {%- elif items | length == 0 -%}
-      <p class="state-msg">No breakfast served.</p>
+      <p style="{{ msg }}">No breakfast served.</p>
       {%- else -%}
       {%- set entrees = items | selectattr('category','equalto','entree') | list -%}
       {%- set sides = items | rejectattr('category','equalto','entree') | list -%}
       {%- if entrees | length > 0 -%}
-      <div class="menu-row entrees">{%- for item in entrees -%}<div class="menu-tile entree">{%- if item['image'] -%}<a href="{{ item['image'] }}" target="_blank" rel="noopener"><img src="{{ item['image'] }}" class="thumb"></a>{%- else -%}<div class="placeholder"></div>{%- endif -%}<div class="tile-name">{{ item['name'] }}</div></div>{%- endfor -%}</div>
+      <div style="display:flex;flex-direction:row;gap:14px;padding:4px 0;margin-bottom:16px;">{%- for item in entrees -%}<div style="{{ tile }}flex:1 1 0;min-width:0;">{%- if item['image'] -%}<a href="{{ item['image'] }}" target="_blank" rel="noopener" style="{{ link }}"><img src="{{ item['image'] }}" style="{{ thumb }}"></a>{%- else -%}<div style="{{ ph }}"></div>{%- endif -%}<div style="{{ name_e }}">{{ item['name'] }}</div></div>{%- endfor -%}</div>
       {%- endif -%}
       {%- if sides | length > 0 -%}
-      <div class="menu-row sides">{%- for item in sides -%}<div class="menu-tile side">{%- if item['image'] -%}<a href="{{ item['image'] }}" target="_blank" rel="noopener"><img src="{{ item['image'] }}" class="thumb"></a>{%- else -%}<div class="placeholder"></div>{%- endif -%}<div class="tile-name">{{ item['name'] }}</div>{%- if item['category'] -%}<div class="tile-cat">{{ item['category'] }}</div>{%- endif -%}</div>{%- endfor -%}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(82px,1fr));gap:14px;padding:4px 0;">{%- for item in sides -%}<div style="{{ tile }}">{%- if item['image'] -%}<a href="{{ item['image'] }}" target="_blank" rel="noopener" style="{{ link }}"><img src="{{ item['image'] }}" style="{{ thumb }}"></a>{%- else -%}<div style="{{ ph }}"></div>{%- endif -%}<div style="{{ name_s }}">{{ item['name'] }}</div>{%- if item['category'] -%}<div style="{{ cat }}">{{ item['category'] }}</div>{%- endif -%}</div>{%- endfor -%}</div>
       {%- endif -%}
       {%- endif -%}
-    card_mod: &meal_card_mod
-      style: |
-        .state-msg {
-          color: var(--secondary-text-color);
-          font-size: 14px;
-          margin: 4px 0;
-        }
-        .menu-row {
-          gap: 14px;
-          padding: 4px 0;
-        }
-        .menu-row.entrees {
-          display: flex;
-          flex-direction: row;
-          margin-bottom: 16px;
-        }
-        .menu-row.entrees .menu-tile {
-          flex: 1 1 0;
-          min-width: 0;
-        }
-        .menu-row.sides {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(82px, 1fr));
-        }
-        .menu-tile {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          text-align: center;
-        }
-        .menu-tile a {
-          width: 100%;
-          display: block;
-          line-height: 0;
-        }
-        .menu-tile .thumb {
-          width: 100%;
-          aspect-ratio: 1;
-          object-fit: cover;
-          border-radius: 10px;
-          border: 1px solid var(--divider-color);
-          display: block;
-          transition: transform 120ms ease;
-        }
-        .menu-tile .thumb:hover { transform: scale(1.04); }
-        .menu-tile .placeholder {
-          width: 100%;
-          aspect-ratio: 1;
-          border-radius: 10px;
-          background: var(--secondary-background-color);
-          border: 1px solid var(--divider-color);
-        }
-        .menu-tile .tile-name {
-          line-height: 1.25;
-          color: var(--primary-text-color);
-          margin-top: 6px;
-        }
-        .menu-tile.entree .tile-name { font-size: 14px; font-weight: 600; }
-        .menu-tile.side   .tile-name { font-size: 12px; font-weight: 500; }
-        .menu-tile .tile-cat {
-          font-size: 10px;
-          color: var(--secondary-text-color);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          margin-top: 2px;
-        }
 
-  # Lunch — re-uses CSS anchor from Breakfast.
+  # Lunch
   - type: markdown
     title: "🥗 Lunch"
     content: |
       {%- set sensor = 'sensor.chenoweth_school_menu_lunch_today' -%}
       {%- set items = state_attr(sensor, 'items') -%}
+      {%- set tile = "display:flex;flex-direction:column;align-items:center;text-align:center;" -%}
+      {%- set link = "width:100%;display:block;line-height:0;" -%}
+      {%- set thumb = "width:100%;aspect-ratio:1;object-fit:cover;border-radius:10px;border:1px solid var(--divider-color);display:block;" -%}
+      {%- set ph = "width:100%;aspect-ratio:1;border-radius:10px;background:var(--secondary-background-color);border:1px solid var(--divider-color);" -%}
+      {%- set name_e = "font-size:14px;font-weight:600;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" -%}
+      {%- set name_s = "font-size:12px;font-weight:500;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" -%}
+      {%- set cat = "font-size:10px;color:var(--secondary-text-color);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;" -%}
+      {%- set msg = "color:var(--secondary-text-color);font-size:14px;margin:4px 0;" -%}
       {%- if items is none -%}
-      <p class="state-msg">⏳ No menu data yet — call <code>nutrislice_menu.sync_menu</code>.</p>
+      <p style="{{ msg }}">⏳ No menu data yet — call <code>nutrislice_menu.sync_menu</code>.</p>
       {%- elif items | length == 0 -%}
-      <p class="state-msg">No lunch served.</p>
+      <p style="{{ msg }}">No lunch served.</p>
       {%- else -%}
       {%- set entrees = items | selectattr('category','equalto','entree') | list -%}
       {%- set sides = items | rejectattr('category','equalto','entree') | list -%}
       {%- if entrees | length > 0 -%}
-      <div class="menu-row entrees">{%- for item in entrees -%}<div class="menu-tile entree">{%- if item['image'] -%}<a href="{{ item['image'] }}" target="_blank" rel="noopener"><img src="{{ item['image'] }}" class="thumb"></a>{%- else -%}<div class="placeholder"></div>{%- endif -%}<div class="tile-name">{{ item['name'] }}</div></div>{%- endfor -%}</div>
+      <div style="display:flex;flex-direction:row;gap:14px;padding:4px 0;margin-bottom:16px;">{%- for item in entrees -%}<div style="{{ tile }}flex:1 1 0;min-width:0;">{%- if item['image'] -%}<a href="{{ item['image'] }}" target="_blank" rel="noopener" style="{{ link }}"><img src="{{ item['image'] }}" style="{{ thumb }}"></a>{%- else -%}<div style="{{ ph }}"></div>{%- endif -%}<div style="{{ name_e }}">{{ item['name'] }}</div></div>{%- endfor -%}</div>
       {%- endif -%}
       {%- if sides | length > 0 -%}
-      <div class="menu-row sides">{%- for item in sides -%}<div class="menu-tile side">{%- if item['image'] -%}<a href="{{ item['image'] }}" target="_blank" rel="noopener"><img src="{{ item['image'] }}" class="thumb"></a>{%- else -%}<div class="placeholder"></div>{%- endif -%}<div class="tile-name">{{ item['name'] }}</div>{%- if item['category'] -%}<div class="tile-cat">{{ item['category'] }}</div>{%- endif -%}</div>{%- endfor -%}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(82px,1fr));gap:14px;padding:4px 0;">{%- for item in sides -%}<div style="{{ tile }}">{%- if item['image'] -%}<a href="{{ item['image'] }}" target="_blank" rel="noopener" style="{{ link }}"><img src="{{ item['image'] }}" style="{{ thumb }}"></a>{%- else -%}<div style="{{ ph }}"></div>{%- endif -%}<div style="{{ name_s }}">{{ item['name'] }}</div>{%- if item['category'] -%}<div style="{{ cat }}">{{ item['category'] }}</div>{%- endif -%}</div>{%- endfor -%}</div>
       {%- endif -%}
       {%- endif -%}
-    card_mod: *meal_card_mod
 
   # Weekly calendar view
   - type: calendar
