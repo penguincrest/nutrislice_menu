@@ -3,8 +3,8 @@
 # 9:30 AM onwards → shows tomorrow's menu
 #
 # Entity IDs for Chenoweth Elementary (JCPS):
-#   sensor.chenoweth_menu_breakfast_today
-#   sensor.chenoweth_menu_lunch_today
+#   sensor.chenoweth_school_menu_breakfast_today
+#   sensor.chenoweth_school_menu_lunch_today
 #   calendar.chenoweth_menu_school_menu
 #
 # Find your real entity IDs under:
@@ -21,7 +21,7 @@ cards:
   # Date header
   - type: markdown
     content: >
-      {% set sensor = 'sensor.chenoweth_menu_breakfast_today' %}
+      {% set sensor = 'sensor.chenoweth_school_menu_breakfast_today' %}
       {% set showing = state_attr(sensor, 'showing') %}
       {% set date_str = state_attr(sensor, 'date') %}
       {% if date_str %}
@@ -45,8 +45,8 @@ cards:
   # card goes silently blank when items are missing.
   - type: markdown
     content: >
-      {% set bk = state_attr('sensor.chenoweth_menu_breakfast_today', 'items') %}
-      {% set ln = state_attr('sensor.chenoweth_menu_lunch_today', 'items') %}
+      {% set bk = state_attr('sensor.chenoweth_school_menu_breakfast_today', 'items') %}
+      {% set ln = state_attr('sensor.chenoweth_school_menu_lunch_today', 'items') %}
       {% set unavail = (bk is none) or (ln is none) %}
       <p style="font-size:18px;font-weight:600;color:var(--primary-text-color);margin:8px 0 4px 0;">
         {% if unavail %}⏳ No menu data yet{% else %}🚫 No School!{% endif %}
@@ -63,8 +63,8 @@ cards:
     visibility:
       - condition: template
         value_template: >
-          {% set bk = state_attr('sensor.chenoweth_menu_breakfast_today', 'items') %}
-          {% set ln = state_attr('sensor.chenoweth_menu_lunch_today', 'items') %}
+          {% set bk = state_attr('sensor.chenoweth_school_menu_breakfast_today', 'items') %}
+          {% set ln = state_attr('sensor.chenoweth_school_menu_lunch_today', 'items') %}
           {{ ((bk is none) or (bk|length == 0))
              and ((ln is none) or (ln|length == 0)) }}
 
@@ -74,11 +74,11 @@ cards:
     visibility: &meal_visibility
       - condition: template
         value_template: >
-          {% set bk = state_attr('sensor.chenoweth_menu_breakfast_today', 'items') %}
-          {% set ln = state_attr('sensor.chenoweth_menu_lunch_today', 'items') %}
+          {% set bk = state_attr('sensor.chenoweth_school_menu_breakfast_today', 'items') %}
+          {% set ln = state_attr('sensor.chenoweth_school_menu_lunch_today', 'items') %}
           {{ (bk and bk|length > 0) or (ln and ln|length > 0) }}
     content: >
-      {% set items = state_attr('sensor.chenoweth_menu_breakfast_today', 'items') or [] %}
+      {% set items = state_attr('sensor.chenoweth_school_menu_breakfast_today', 'items') or [] %}
       {% set entrees = items | selectattr('category','equalto','entree') | list %}
       {% set sides   = items | rejectattr('category','equalto','entree') | list %}
       {% if items | length == 0 %}
@@ -194,7 +194,7 @@ cards:
     title: "🥗 Lunch"
     visibility: *meal_visibility
     content: >
-      {% set items = state_attr('sensor.chenoweth_menu_lunch_today', 'items') or [] %}
+      {% set items = state_attr('sensor.chenoweth_school_menu_lunch_today', 'items') or [] %}
       {% set entrees = items | selectattr('category','equalto','entree') | list %}
       {% set sides   = items | rejectattr('category','equalto','entree') | list %}
       {% if items | length == 0 %}
