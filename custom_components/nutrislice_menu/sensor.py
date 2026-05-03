@@ -14,14 +14,14 @@ from typing import Any
 
 import homeassistant.util.dt as dt_util
 from homeassistant.components.sensor import SensorEntity
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceEntryType, DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_change
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from . import NutrisliceConfigEntry
-from .const import DOMAIN, MENU_TYPES
+from .const import DATA_COORDINATOR, DOMAIN, MENU_TYPES
 from .coordinator import NutrisliceCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -35,13 +35,15 @@ FLIP_MINUTE = 30
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: NutrisliceConfigEntry,
+    entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up sensor entities from the config entry."""
+    coordinator: NutrisliceCoordinator = (
+        hass.data[DOMAIN][entry.entry_id][DATA_COORDINATOR]
+    )
     async_add_entities(
-        NutrisliceMenuSensor(entry.runtime_data, mt, entry.entry_id)
-        for mt in MENU_TYPES
+        NutrisliceMenuSensor(coordinator, mt, entry.entry_id) for mt in MENU_TYPES
     )
 
 

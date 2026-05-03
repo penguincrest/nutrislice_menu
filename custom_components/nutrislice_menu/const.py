@@ -24,5 +24,8 @@ CONF_SCHOOL   = "school"
 DEFAULT_DISTRICT = "jcps"
 DEFAULT_SCHOOL   = "chenoweth"
 
+# hass.data key
+DATA_COORDINATOR = "coordinator"
+
 # Service
 SERVICE_SYNC_MENU = "sync_menu"
