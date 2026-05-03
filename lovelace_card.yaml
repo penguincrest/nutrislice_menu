@@ -62,6 +62,7 @@ cards:
       {% set name_e_style  = "font-size:14px;font-weight:600;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" %}
       {% set name_s_style  = "font-size:12px;font-weight:500;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" %}
       {% set cat_style     = "font-size:10px;color:var(--secondary-text-color);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;" %}
+      {% set cat_display   = {'vegetable': 'Veggie'} %}
       {% set msg_style     = "color:var(--secondary-text-color);font-size:14px;margin:4px 0;" %}
       {% set row_e_style   = "display:flex;flex-direction:row;gap:14px;padding:4px 0;margin-bottom:16px;" %}
       {% set row_s_style   = "display:flex;flex-direction:row;gap:14px;padding:4px 0;" %}
@@ -98,7 +99,7 @@ cards:
                 {% endif %}
                 <div style="{{ name_s_style }}">{{ item['name'] }}</div>
                 {% if item['category'] %}
-                  <div style="{{ cat_style }}">{{ item['category'] }}</div>
+                  <div style="{{ cat_style }}">{{ cat_display.get(item['category'], item['category']) }}</div>
                 {% endif %}
               </div>
             {% endfor %}
@@ -119,6 +120,7 @@ cards:
       {% set name_e_style  = "font-size:14px;font-weight:600;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" %}
       {% set name_s_style  = "font-size:12px;font-weight:500;line-height:1.25;color:var(--primary-text-color);margin-top:6px;" %}
       {% set cat_style     = "font-size:10px;color:var(--secondary-text-color);text-transform:uppercase;letter-spacing:0.05em;margin-top:2px;" %}
+      {% set cat_display   = {'vegetable': 'Veggie'} %}
       {% set msg_style     = "color:var(--secondary-text-color);font-size:14px;margin:4px 0;" %}
       {% set row_e_style   = "display:flex;flex-direction:row;gap:14px;padding:4px 0;margin-bottom:16px;" %}
       {% set row_s_style   = "display:flex;flex-direction:row;gap:14px;padding:4px 0;" %}
@@ -155,7 +157,7 @@ cards:
                 {% endif %}
                 <div style="{{ name_s_style }}">{{ item['name'] }}</div>
                 {% if item['category'] %}
-                  <div style="{{ cat_style }}">{{ item['category'] }}</div>
+                  <div style="{{ cat_style }}">{{ cat_display.get(item['category'], item['category']) }}</div>
                 {% endif %}
               </div>
             {% endfor %}
