@@ -16,6 +16,25 @@ NUTRISLICE_SCHOOLS_URL = (
 
 MENU_TYPES = ("breakfast", "lunch")
 
+# Substrings (case-insensitive) that, if present in an item's name, mark it as
+# an entree when Nutrislice didn't categorize it.  Keep these unambiguous —
+# anything that could appear in a side dish should NOT go here.
+ENTREE_NAME_PATTERNS = (
+    "burger",
+    "sandwich",
+    "pizza",
+    "hot dog",
+    "nuggets",
+    "smackers",
+    "wrap",
+    "taco",
+    "nachos",
+    "pasta",
+    "spaghetti",
+    "calzone",
+    "quesadilla",
+)
+
 # Config entry keys
 CONF_DISTRICT = "district"
 CONF_SCHOOL   = "school"

@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import DOMAIN, MENU_TYPES, NUTRISLICE_API_URL
+from .const import DOMAIN, ENTREE_NAME_PATTERNS, MENU_TYPES, NUTRISLICE_API_URL
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -110,9 +110,12 @@ class NutrisliceCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 name: str = (food.get("name") or "").strip()
                 if not name:
                     continue
+                category = (food.get("food_category") or "").lower()
+                if not category and any(p in name.lower() for p in ENTREE_NAME_PATTERNS):
+                    category = "entree"
                 items.append({
                     "name": name,
-                    "category": (food.get("food_category") or "").lower(),
+                    "category": category,
                     "image": food.get("image_url") or food.get("default_image_url") or "",
                 })
             result[date_str] = items
