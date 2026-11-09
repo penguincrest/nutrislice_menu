@@ -116,39 +116,24 @@ Fetches this week's and next week's menus from Nutrislice, updates the sensor en
 
 ## Dashboard card
 
+The integration ships its own Lovelace card and loads it on every dashboard automatically — no HACS frontend plugin or dashboard resource needed. Add it from the card picker ("Nutrislice Menu") or in YAML:
+
 ```yaml
-type: vertical-stack
-title: "🏫 School Menu"
-cards:
-  - type: markdown
-    title: "🍳 Breakfast"
-    content: >
-      {% set items = state_attr('sensor.chenoweth_breakfast_today', 'items') %}
-      {% if items %}
-        {% for item in items %}
-          - **{{ item.name }}**{% if item.image %}
-          ![]( {{- item.image -}} ){width=80}{% endif %}
-        {% endfor %}
-      {% else %}
-        _No data – run sync_menu service_
-      {% endif %}
-  - type: markdown
-    title: "🥗 Lunch"
-    content: >
-      {% set items = state_attr('sensor.chenoweth_lunch_today', 'items') %}
-      {% if items %}
-        {% for item in items %}
-          - **{{ item.name }}**{% if item.image %}
-          ![]( {{- item.image -}} ){width=80}{% endif %}
-        {% endfor %}
-      {% else %}
-        _No data – run sync_menu service_
-      {% endif %}
-  - type: calendar
-    entities:
-      - calendar.school_menu
-    initial_view: dayGridWeek
+type: custom:nutrislice-menu-card
+breakfast_entity: sensor.chenoweth_menu_breakfast_today
+lunch_entity: sensor.chenoweth_menu_lunch_today
+title: School Menu   # optional
 ```
+
+| Option | Description |
+|---|---|
+| `breakfast_entity` | Breakfast sensor (optional if `lunch_entity` is set) |
+| `lunch_entity` | Lunch sensor (optional if `breakfast_entity` is set) |
+| `title` | Optional card heading |
+
+The card opens on the sensors' current day (today before 9:30 AM, the next school day after) and the ‹ › buttons step through every day loaded by the last sync. Tap a food photo to enlarge it.
+
+> Upgrading from the old `html-template-card` YAML? Replace the whole `vertical-stack` with the card above.
 
 ---
 

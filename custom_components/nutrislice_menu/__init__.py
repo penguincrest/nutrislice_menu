@@ -6,25 +6,48 @@ Fetches breakfast and lunch menus from any Nutrislice-powered school and:
     menu events directly to HA — no external calendar integration required
   • Registers a service  nutrislice_menu.sync_menu  that fetches fresh data
     on demand (call this from your own automation)
+  • Serves the  custom:nutrislice-menu-card  Lovelace card and loads it on
+    every dashboard — no separate frontend resource required
 """
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 
+from homeassistant.components import frontend
+from homeassistant.components.http import StaticPathConfig
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.typing import ConfigType
+from homeassistant.loader import async_get_integration
 
-from .const import CONF_DISTRICT, CONF_SCHOOL, DOMAIN, SERVICE_SYNC_MENU
+from .const import CARD_URL, CONF_DISTRICT, CONF_SCHOOL, DOMAIN, SERVICE_SYNC_MENU
 from .coordinator import NutrisliceCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS: list[Platform] = [Platform.SENSOR, Platform.CALENDAR]
 
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
+CARD_PATH = Path(__file__).parent / "frontend" / "nutrislice-menu-card.js"
+
 # HA 2024.4+ generic ConfigEntry — gives platform code typed access to the
 # coordinator via entry.runtime_data, removing the hass.data bookkeeping.
 NutrisliceConfigEntry = ConfigEntry[NutrisliceCoordinator]
+
+
+async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
+    """Serve the bundled Lovelace card (runs once per HA start)."""
+    integration = await async_get_integration(hass, DOMAIN)
+    await hass.http.async_register_static_paths(
+        [StaticPathConfig(CARD_URL, str(CARD_PATH), True)]
+    )
+    # The version query string busts browser caches on each release.
+    frontend.add_extra_js_url(hass, f"{CARD_URL}?v={integration.version}")
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: NutrisliceConfigEntry) -> bool:

@@ -45,3 +45,6 @@ DEFAULT_SCHOOL   = "chenoweth"
 
 # Service
 SERVICE_SYNC_MENU = "sync_menu"
+
+# Bundled Lovelace card
+CARD_URL = "/nutrislice_menu/nutrislice-menu-card.js"
