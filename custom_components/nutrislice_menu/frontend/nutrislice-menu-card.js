@@ -21,6 +21,19 @@ const MEALS = [
 
 const CATEGORY_LABELS = { vegetable: "Veggie" };
 
+// Placeholder icon for items Nutrislice has no photo for.
+const CATEGORY_ICONS = {
+  entree: "mdi:silverware-fork-knife",
+  condiment: "mdi:soy-sauce",
+  vegetable: "mdi:carrot",
+  fruit: "mdi:food-apple",
+  milk: "mdi:cup",
+  grain: "mdi:bread-slice",
+  dessert: "mdi:cupcake",
+  side: "mdi:bowl-mix",
+};
+const FALLBACK_ICON = "mdi:food";
+
 const ESCAPES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ESCAPES[c]);
 const safeUrl = (url) => (/^https?:\/\//i.test(url || "") ? url : "");
@@ -52,7 +65,11 @@ const STYLE = `
   .tile { display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1 1 0; min-width: 0; }
   .thumb, .ph { width: 100%; aspect-ratio: 1; border-radius: 10px; border: 1px solid var(--divider-color); box-sizing: border-box; }
   .thumb { object-fit: cover; display: block; cursor: zoom-in; }
-  .ph { background: var(--secondary-background-color); }
+  .ph {
+    background: var(--secondary-background-color); color: var(--secondary-text-color);
+    display: flex; align-items: center; justify-content: center; container-type: inline-size;
+  }
+  .ph ha-icon { --mdc-icon-size: 45cqw; }
   .name { font-size: 12px; font-weight: 500; line-height: 1.25; margin-top: 6px; color: var(--primary-text-color); }
   .name.entree { font-size: 14px; font-weight: 600; }
   .cat { font-size: 10px; color: var(--secondary-text-color); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
@@ -185,9 +202,12 @@ class NutrisliceMenuCard extends HTMLElement {
   _tile(item, isEntree) {
     const img = safeUrl(item.image);
     const category = !isEntree && item.category ? CATEGORY_LABELS[item.category] || item.category : "";
+    const icon = CATEGORY_ICONS[item.category] || FALLBACK_ICON;
     return `
       <div class="tile">
-        ${img ? `<img class="thumb" src="${esc(img)}" loading="lazy" alt="">` : `<div class="ph"></div>`}
+        ${img
+          ? `<img class="thumb" src="${esc(img)}" loading="lazy" alt="">`
+          : `<div class="ph"><ha-icon icon="${icon}"></ha-icon></div>`}
         <div class="name${isEntree ? " entree" : ""}">${esc(item.name)}</div>
         ${category ? `<div class="cat">${esc(category)}</div>` : ""}
       </div>`;
